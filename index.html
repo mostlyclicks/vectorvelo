@@ -285,6 +285,7 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
   <div id="rideSelectBox">
     <div class="rs-title">SELECT MISSION</div>
     <div class="rs-sub">EACH RUN IS PROCEDURALLY GENERATED · NO TWO RIDES IDENTICAL</div>
+    <div class="rs-sub" id="rsVersion" style="opacity:.3;margin-top:-16px;margin-bottom:18px"></div>
     <div class="rs-grid" id="rsGrid"></div>
     <div class="rs-desc" id="rsDesc"></div>
     <div class="rs-preview">
@@ -371,6 +372,8 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
 
 <script>
 "use strict";
+
+const VERSION = 'v0.3.0';
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const SUPA_URL='https://bsfyvwmmfpeialgqmngg.supabase.co';
@@ -592,6 +595,7 @@ let selectedProfile = PROFILES[0];
 let pendingBike = false;  // whether selector was opened from KICKR or demo
 
 function buildRideSelector(){
+  $('rsVersion').textContent = VERSION;
   const grid=$('rsGrid');
   grid.innerHTML='';
   PROFILES.forEach((p,i)=>{
@@ -1328,6 +1332,7 @@ function drawTitle(){
   if(Math.sin(S.t*3.2)>-.25)vecText(prompt,W/2,H*.6,16,promptColor,'center');
   if(S.best>0)vecText('HIGH SCORE '+(S.imperial?(S.best/1609.344).toFixed(2)+' MI':(S.best/1000).toFixed(2)+' KM'),W/2,H*.66,13,'rgba(57,255,110,.3)','center');
   vecText('© 2026 MOSTLY CLICKS AMUSEMENTS · VECTORVELO.APP',W/2,H-42,10,'rgba(57,255,110,.2)','center',3);
+  vecText(VERSION,W/2,H-26,9,'rgba(57,255,110,.15)','center',2);
 }
 function drawDone(){
   const hy=H*.46;drawStars(hy);drawMountains(hy);
