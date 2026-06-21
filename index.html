@@ -643,9 +643,10 @@ function updateErgPct(){
 
 function drawPreviewWaveform(p){
   const canvas=$('rsPreviewCanvas');
-  const pw=canvas.offsetWidth||canvas.parentElement.offsetWidth||480;
-  const ph=canvas.offsetHeight||52;
-  if(pw<4||ph<4) return;
+  const par=canvas.parentElement;
+  const pw=canvas.clientWidth||par.clientWidth||par.offsetWidth||560;
+  const ph=par.clientHeight||par.offsetHeight||60;
+  if(pw<4||ph<4){ setTimeout(()=>drawPreviewWaveform(p),30); return; }
   canvas.width=pw*2; canvas.height=ph*2;
   const ctx=canvas.getContext('2d');
   ctx.scale(2,2);
@@ -690,8 +691,8 @@ function openRideSelect(fromBike){
   $('rsLaunchBike').style.display=fromBike?'block':'none';
   $('rsLaunchDemo').style.display='block';
   $('rideSelectModal').classList.add('show');
-  // defer draw one frame so canvas has layout dimensions
-  requestAnimationFrame(()=>selectProfile(selectedProfile));
+  // defer draw until after browser paint + layout
+  setTimeout(()=>selectProfile(selectedProfile), 20);
 }
 function closeRideSelect(){ $('rideSelectModal').classList.remove('show'); }
 
@@ -1437,7 +1438,7 @@ window.addEventListener('keydown',e=>{
   if(e.code==='Space'&&S.mode==='title'&&!$('authOverlay').classList.contains('show')&&!rsSel)
     openRideSelect(false);
   // number keys 1-5 select profile in selector
-  if(rsSel&&e.key>='1'&&e.key<='5') selectProfile(PROFILES[+e.key-1]);
+  if(rsSel&&e.key>='1'&&e.key<='6') selectProfile(PROFILES[+e.key-1]);
   // enter launches demo from selector
   if(rsSel&&e.key==='Enter') launchRide(true);
 });
