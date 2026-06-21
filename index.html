@@ -288,7 +288,7 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
     </div>
     <div class="rs-launch">
       <button class="v c" id="rsLaunchDemo">▶ LAUNCH DEMO</button>
-      <button class="v g" id="rsLaunchBike" id="rsLaunchBike">⚡ LAUNCH ON KICKR</button>
+      <button class="v g" id="rsLaunchBike">⚡ LAUNCH ON KICKR</button>
     </div>
     <div class="rs-cancel" onclick="closeRideSelect()">[ CANCEL ]</div>
   </div>
@@ -571,26 +571,34 @@ function buildRideSelector(){
     card.dataset.idx=i;
     grid.appendChild(card);
   });
-  selectProfile(PROFILES[0]);
+  // highlight first card without drawing canvas (modal hidden at boot)
+  highlightCard(PROFILES[0]);
 }
 
-function selectProfile(p){
-  selectedProfile=p;
-  // update card highlights
+function highlightCard(p){
   document.querySelectorAll('.rs-card').forEach((c,i)=>{
     const active=PROFILES[i]===p;
     c.classList.toggle('selected',active);
     c.style.background=active?p.color+'18':'transparent';
-    c.style.borderColor=active?p.color:p.color+'44';
+    c.style.borderColor=active?p.color:p.color+'55';
   });
+}
+
+function selectProfile(p){
+  selectedProfile=p;
+  highlightCard(p);
   $('rsPreviewLabel').textContent=p.name+' · '+p.sub;
   $('rsPreviewLabel').style.color=p.color;
-  drawPreviewWaveform(p);
+  // only draw canvas when modal is visible (has real dimensions)
+  if($('rideSelectModal').classList.contains('show')) drawPreviewWaveform(p);
 }
 
 function drawPreviewWaveform(p){
   const canvas=$('rsPreviewCanvas');
-  const pw=canvas.offsetWidth||480, ph=canvas.offsetHeight||52;
+  // use parent width if canvas hasn't been laid out yet
+  const pw=canvas.offsetWidth||canvas.parentElement.offsetWidth||480;
+  const ph=canvas.offsetHeight||52;
+  if(pw<4||ph<4) return;  // modal still hidden, bail
   canvas.width=pw*2; canvas.height=ph*2;
   const ctx=canvas.getContext('2d');
   ctx.scale(2,2);
@@ -625,11 +633,11 @@ function drawPreviewWaveform(p){
 
 function openRideSelect(fromBike){
   pendingBike=!!fromBike;
-  // show/hide KICKR launch button
   $('rsLaunchBike').style.display=fromBike?'block':'none';
   $('rsLaunchDemo').style.display='block';
   $('rideSelectModal').classList.add('show');
-  drawPreviewWaveform(selectedProfile);
+  // defer draw one frame so canvas has layout dimensions
+  requestAnimationFrame(()=>selectProfile(selectedProfile));
 }
 function closeRideSelect(){ $('rideSelectModal').classList.remove('show'); }
 
