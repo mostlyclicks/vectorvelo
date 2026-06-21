@@ -174,38 +174,42 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
 .hist-empty,.hist-loading{ font-size:10px; letter-spacing:.28em; text-align:center; padding:24px 0; color:rgba(57,255,110,.25); }
 
 /* ── RIDE SELECTOR MODAL ──────────────────────────────────── */
-#rideSelectModal{ position:fixed; inset:0; z-index:160; background:rgba(2,4,3,.95);
-  display:none; align-items:center; justify-content:center; }
+#rideSelectModal{ position:fixed; inset:0; z-index:160; background:rgba(2,4,3,.96);
+  display:none; align-items:center; justify-content:center; overflow-y:auto; }
 #rideSelectModal.show{ display:flex; }
-#rideSelectBox{ width:min(580px,96vw); padding:28px 24px 22px; position:relative; }
-.rs-title{ font-size:18px; letter-spacing:.32em; font-family:Anton,sans-serif;
-  color:var(--c); text-shadow:0 0 16px var(--c); text-align:center; margin-bottom:6px; }
-.rs-sub{ font-size:8px; letter-spacing:.32em; color:rgba(39,232,255,.35); text-align:center; margin-bottom:22px; }
+#rideSelectBox{ width:min(620px,96vw); padding:32px 28px 24px; }
+.rs-title{ font-size:20px; letter-spacing:.32em; font-family:Anton,sans-serif;
+  color:var(--c); text-shadow:0 0 18px var(--c); text-align:center; margin-bottom:6px; }
+.rs-sub{ font-size:9px; letter-spacing:.28em; color:rgba(39,232,255,.35); text-align:center; margin-bottom:24px; }
 
-/* profile cards grid */
-.rs-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:20px; }
+/* 2-row 3-col card grid */
+.rs-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
 .rs-card{
-  border:1.5px solid rgba(255,255,255,.1); padding:10px 6px 8px;
-  cursor:pointer; text-align:center; transition:all .15s; position:relative; overflow:hidden;
+  border:1.5px solid rgba(255,255,255,.12); padding:16px 10px 12px;
+  cursor:pointer; text-align:center; transition:border-color .12s, background .12s, box-shadow .12s;
+  user-select:none;
 }
-.rs-card:hover{ border-color:rgba(255,255,255,.4); filter:brightness(1.2); }
-.rs-card.selected{ box-shadow:0 0 20px currentColor; }
-.rs-card-icon{ font-size:22px; margin-bottom:5px; display:block; pointer-events:none; }
-.rs-card-name{ font-size:8px; letter-spacing:.22em; display:block; margin-bottom:3px; pointer-events:none; }
-.rs-card-sub{ font-size:7px; letter-spacing:.15em; opacity:.45; display:block; pointer-events:none; }
-/* per-type colours set via inline style on each card */
+.rs-card:hover{ border-color:rgba(255,255,255,.45); filter:brightness(1.18); }
+.rs-card.selected{ box-shadow:0 0 22px currentColor; }
+.rs-card-icon{ font-size:28px; margin-bottom:7px; display:block; pointer-events:none; line-height:1; }
+.rs-card-name{ font-size:11px; letter-spacing:.24em; display:block; margin-bottom:4px; pointer-events:none; font-weight:bold; }
+.rs-card-sub{ font-size:9px; letter-spacing:.16em; opacity:.5; display:block; pointer-events:none; }
+
+/* desc strip below grid */
+.rs-desc{ font-size:10px; letter-spacing:.2em; color:rgba(255,255,255,.45);
+  text-align:center; margin-bottom:14px; min-height:16px; padding:0 8px; }
 
 /* terrain preview strip */
-.rs-preview{ height:52px; border:1px solid rgba(255,255,255,.1); margin-bottom:18px;
+.rs-preview{ height:60px; border:1px solid rgba(255,255,255,.1); margin-bottom:16px;
   position:relative; overflow:hidden; background:rgba(0,0,0,.3); }
 #rsPreviewCanvas{ width:100%; height:100%; display:block; }
-.rs-preview-label{ position:absolute; top:4px; left:8px;
-  font-size:8px; letter-spacing:.28em; opacity:.4; }
+.rs-preview-label{ position:absolute; top:5px; left:10px;
+  font-size:9px; letter-spacing:.26em; opacity:.45; pointer-events:none; }
 
-.rs-launch{ display:flex; gap:8px; }
+.rs-launch{ display:flex; gap:10px; }
 .rs-launch button{ flex:1; }
 .rs-cancel{ font-size:9px; letter-spacing:.22em; color:rgba(255,255,255,.2);
-  text-align:center; margin-top:10px; cursor:pointer; }
+  text-align:center; margin-top:12px; cursor:pointer; }
 .rs-cancel:hover{ color:rgba(255,255,255,.5); }
 </style>
 </head>
@@ -280,18 +284,19 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
 <div id="rideSelectModal">
   <div id="rideSelectBox">
     <div class="rs-title">SELECT MISSION</div>
-    <div class="rs-sub">EACH RUN IS PROCEDURALLY GENERATED — NO TWO RIDES IDENTICAL</div>
+    <div class="rs-sub">EACH RUN IS PROCEDURALLY GENERATED · NO TWO RIDES IDENTICAL</div>
     <div class="rs-grid" id="rsGrid"></div>
+    <div class="rs-desc" id="rsDesc"></div>
     <div class="rs-preview">
       <div class="rs-preview-label" id="rsPreviewLabel">TERRAIN PREVIEW</div>
       <canvas id="rsPreviewCanvas"></canvas>
     </div>
     <div id="rsErgRow" style="display:none;align-items:center;gap:12px;margin-bottom:14px;font-size:10px;letter-spacing:.25em;color:#b47fff;">
-      <span>TARGET WATTS</span>
+      <span style="white-space:nowrap">TARGET WATTS</span>
       <input type="number" id="rsErgWatts" min="50" max="600" value="150"
         style="flex:1;background:rgba(180,127,255,.06);border:1px solid rgba(180,127,255,.3);
-        color:#b47fff;font-family:inherit;font-size:14px;padding:6px 10px;outline:none;letter-spacing:.08em;">
-      <span id="rsErgPct" style="opacity:.5;font-size:9px;width:60px;text-align:right"></span>
+        color:#b47fff;font-family:inherit;font-size:14px;padding:7px 10px;outline:none;letter-spacing:.08em;">
+      <span id="rsErgPct" style="opacity:.5;font-size:9px;width:64px;text-align:right;white-space:nowrap"></span>
     </div>
     <div class="rs-launch">
       <button class="v c" id="rsLaunchDemo">▶ LAUNCH DEMO</button>
@@ -617,6 +622,8 @@ function selectProfile(p){
   highlightCard(p);
   $('rsPreviewLabel').textContent=p.name+' · '+p.sub;
   $('rsPreviewLabel').style.color=p.color;
+  $('rsDesc').textContent=p.desc||'';
+  $('rsDesc').style.color=p.color;
   // show ERG target row only for Ground Control
   const isErg=!!p.isErg;
   $('rsErgRow').style.display=isErg?'flex':'none';
