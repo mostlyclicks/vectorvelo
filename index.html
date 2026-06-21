@@ -79,6 +79,14 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
   padding:2px 7px; cursor:pointer; }
 #btnSignOut:hover{ border-color:var(--r); color:var(--r); }
 
+/* ── SHARED MODAL BASE ────────────────────────────────────── */
+.modal-overlay{
+  position:fixed; inset:0; z-index:150; background:rgba(2,4,3,.9);
+  display:none; align-items:center; justify-content:center;
+}
+.modal-overlay.show{ display:flex; }
+.modal-overlay.scrollable{ align-items:flex-start; padding-top:6vh; overflow-y:auto; }
+
 /* ── AUTH OVERLAY ─────────────────────────────────────────── */
 #authOverlay{
   position:fixed; inset:0; z-index:200;
@@ -87,49 +95,33 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
   opacity:0; pointer-events:none; transition:opacity .35s;
 }
 #authOverlay.show{ opacity:1; pointer-events:all; }
-
 #authBox{
-  width:min(420px,92vw);
-  border:1.5px solid var(--c);
+  width:min(420px,92vw); border:1.5px solid var(--c);
   box-shadow:0 0 40px rgba(39,232,255,.18), inset 0 0 30px rgba(39,232,255,.04);
-  padding:36px 32px 28px;
-  position:relative;
+  padding:36px 32px 28px; position:relative;
 }
 #authBox::before{
-  content:'';position:absolute;inset:0;pointer-events:none;
+  content:''; position:absolute; inset:0; pointer-events:none;
   background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.15) 3px,rgba(0,0,0,0) 4px);
 }
-.auth-title{
-  font-size:22px; letter-spacing:.3em; color:var(--c);
-  text-shadow:0 0 18px var(--c); text-align:center; margin-bottom:6px;
-  font-family:Anton,sans-serif;
-}
-.auth-sub{
-  font-size:9px; letter-spacing:.35em; color:rgba(39,232,255,.45);
-  text-align:center; margin-bottom:28px;
-}
-.auth-tabs{ display:flex; gap:0; margin-bottom:24px; border:1px solid rgba(39,232,255,.25); }
-.auth-tab{
-  flex:1; padding:8px; font-family:inherit; font-size:11px; letter-spacing:.28em;
-  background:transparent; border:none; color:rgba(39,232,255,.45); cursor:pointer;
-  transition:all .15s;
-}
+.auth-title{ font-size:22px; letter-spacing:.3em; color:var(--c);
+  text-shadow:0 0 18px var(--c); text-align:center; margin-bottom:6px; font-family:Anton,sans-serif; }
+.auth-sub{ font-size:9px; letter-spacing:.35em; color:rgba(39,232,255,.45); text-align:center; margin-bottom:28px; }
+.auth-tabs{ display:flex; margin-bottom:24px; border:1px solid rgba(39,232,255,.25); }
+.auth-tab{ flex:1; padding:8px; font-family:inherit; font-size:11px; letter-spacing:.28em;
+  background:transparent; border:none; color:rgba(39,232,255,.45); cursor:pointer; transition:all .15s; }
 .auth-tab.active{ background:rgba(39,232,255,.1); color:var(--c); text-shadow:0 0 8px var(--c); }
 .auth-field{ margin-bottom:14px; }
 .auth-field label{ display:block; font-size:9px; letter-spacing:.3em; color:rgba(57,255,110,.5); margin-bottom:5px; }
-.auth-field input{
-  width:100%; background:rgba(57,255,110,.04); border:1px solid rgba(57,255,110,.25);
+.auth-field input{ width:100%; background:rgba(57,255,110,.04); border:1px solid rgba(57,255,110,.25);
   color:var(--g); font-family:inherit; font-size:13px; letter-spacing:.1em;
-  padding:9px 11px; outline:none; transition:border-color .15s;
-}
+  padding:9px 11px; outline:none; transition:border-color .15s; }
 .auth-field input:focus{ border-color:var(--g); box-shadow:0 0 10px rgba(57,255,110,.15); }
 .auth-field input::placeholder{ color:rgba(57,255,110,.2); }
-.auth-submit{
-  width:100%; margin-top:6px; padding:12px; font-family:inherit; font-size:13px;
+.auth-submit{ width:100%; margin-top:6px; padding:12px; font-family:inherit; font-size:13px;
   letter-spacing:.3em; background:transparent; border:1.5px solid var(--g);
   color:var(--g); cursor:pointer; text-shadow:0 0 8px var(--g);
-  box-shadow:0 0 12px rgba(57,255,110,.15); transition:all .1s;
-}
+  box-shadow:0 0 12px rgba(57,255,110,.15); transition:all .1s; }
 .auth-submit:hover{ background:rgba(57,255,110,.08); box-shadow:0 0 28px rgba(57,255,110,.3); }
 .auth-submit:disabled{ opacity:.35; cursor:not-allowed; }
 .auth-err{ font-size:10px; letter-spacing:.18em; color:var(--r); text-shadow:0 0 6px var(--r);
@@ -138,53 +130,55 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
   text-align:center; cursor:pointer; }
 .auth-skip:hover{ color:var(--a); }
 
+/* ── SHARED MODAL BOX STYLES ──────────────────────────────── */
+.mbox{ width:min(420px,94vw); padding:28px 26px 22px; position:relative; }
+.mbox-title{ font-size:15px; letter-spacing:.32em; font-family:Anton,sans-serif;
+  margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; }
+.mbox-close{ font-size:10px; letter-spacing:.2em; opacity:.4; cursor:pointer; font-family:"Courier New",monospace; }
+.mbox-close:hover{ opacity:1; }
+.mbox-section{ font-size:8px; letter-spacing:.35em; opacity:.35;
+  margin:14px 0 8px; border-bottom:1px solid currentColor; padding-bottom:4px; opacity:.25; }
+.mbox-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.mbox-row label{ font-size:9px; letter-spacing:.26em; opacity:.5; width:130px; flex-shrink:0; }
+.mbox-row input[type=number],
+.mbox-row input[type=text]{
+  flex:1; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.18);
+  color:inherit; font-family:inherit; font-size:13px; letter-spacing:.08em;
+  padding:6px 9px; outline:none; transition:border-color .15s;
+}
+.mbox-row input:focus{ border-color:currentColor; box-shadow:0 0 8px rgba(255,255,255,.1); }
+.mbox-actions{ display:flex; gap:8px; margin-top:18px; }
+.mbox-actions button{ flex:1; }
+.mbox-status{ font-size:9px; letter-spacing:.2em; color:rgba(57,255,110,.55);
+  margin-top:8px; text-align:center; min-height:14px; }
+
+/* ── PILOT MODAL ──────────────────────────────────────────── */
+#pilotModal .mbox{ border:1.5px solid var(--g); box-shadow:0 0 36px rgba(57,255,110,.12); color:var(--g); }
+#pilotModal .mbox-title{ color:var(--g); text-shadow:0 0 14px var(--g); }
+#pilotModal .mbox-row input{ border-color:rgba(57,255,110,.2); }
+#pilotModal .mbox-row input:focus{ border-color:var(--g); box-shadow:0 0 8px rgba(57,255,110,.15); }
+.pilot-autozone{
+  width:100%; margin:4px 0 2px; padding:7px; font-family:inherit; font-size:10px;
+  letter-spacing:.28em; background:rgba(57,255,110,.06); border:1px solid rgba(57,255,110,.25);
+  color:rgba(57,255,110,.7); cursor:pointer; transition:all .12s;
+}
+.pilot-autozone:hover{ background:rgba(57,255,110,.12); color:var(--g); border-color:var(--g); }
+.pilot-autozone-hint{ font-size:8px; letter-spacing:.22em; color:rgba(57,255,110,.28);
+  margin-bottom:10px; text-align:center; }
+
 /* ── SETTINGS MODAL ───────────────────────────────────────── */
-#settingsModal{
-  position:fixed; inset:0; z-index:150; background:rgba(2,4,3,.88);
-  display:none; align-items:center; justify-content:center;
-}
-#settingsModal.show{ display:flex; }
-#settingsBox{
-  width:min(400px,92vw); border:1.5px solid var(--a);
-  box-shadow:0 0 36px rgba(255,194,52,.15); padding:30px 28px 22px; position:relative;
-}
-.set-title{ font-size:16px; letter-spacing:.32em; color:var(--a);
-  text-shadow:0 0 14px var(--a); margin-bottom:22px; font-family:Anton,sans-serif; }
-.set-row{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-.set-row label{ font-size:9px; letter-spacing:.28em; color:rgba(255,194,52,.5); width:120px; flex-shrink:0; }
-.set-row input[type=number]{
-  flex:1; background:rgba(255,194,52,.04); border:1px solid rgba(255,194,52,.22);
-  color:var(--a); font-family:inherit; font-size:13px; letter-spacing:.08em;
-  padding:6px 9px; outline:none;
-}
-.set-row input:focus{ border-color:var(--a); box-shadow:0 0 8px rgba(255,194,52,.15); }
-.set-section{ font-size:8px; letter-spacing:.35em; color:rgba(255,194,52,.3);
-  margin:16px 0 8px; border-bottom:1px solid rgba(255,194,52,.1); padding-bottom:4px; }
-.set-actions{ display:flex; gap:8px; margin-top:20px; }
-.set-actions button{ flex:1; }
-.set-status{ font-size:9px; letter-spacing:.2em; color:rgba(57,255,110,.5); margin-top:8px; text-align:center; min-height:14px; }
+#settingsModal .mbox{ border:1.5px solid var(--a); box-shadow:0 0 36px rgba(255,194,52,.12); color:var(--a); }
+#settingsModal .mbox-title{ color:var(--a); text-shadow:0 0 14px var(--a); }
+#settingsModal .mbox-row input{ border-color:rgba(255,194,52,.2); }
+#settingsModal .mbox-row input:focus{ border-color:var(--a); box-shadow:0 0 8px rgba(255,194,52,.15); }
 
 /* ── HISTORY MODAL ────────────────────────────────────────── */
-#historyModal{
-  position:fixed; inset:0; z-index:150; background:rgba(2,4,3,.92);
-  display:none; align-items:flex-start; justify-content:center; padding-top:6vh;
-  overflow-y:auto;
-}
-#historyModal.show{ display:flex; }
-#historyBox{
-  width:min(560px,96vw); border:1.5px solid var(--c);
-  box-shadow:0 0 36px rgba(39,232,255,.12); padding:24px 22px 20px;
-  margin-bottom:20px;
-}
-.hist-title{ font-size:15px; letter-spacing:.32em; color:var(--c);
-  text-shadow:0 0 12px var(--c); margin-bottom:18px; font-family:Anton,sans-serif;
-  display:flex; justify-content:space-between; align-items:center; }
-.hist-close{ font-size:11px; letter-spacing:.2em; color:rgba(39,232,255,.4); cursor:pointer; }
-.hist-close:hover{ color:var(--c); }
-.hist-row{
-  border:1px solid rgba(39,232,255,.12); padding:11px 13px; margin-bottom:8px;
-  cursor:pointer; transition:all .12s;
-}
+#historyModal{ align-items:flex-start; padding-top:6vh; overflow-y:auto; }
+#historyModal .mbox{ width:min(560px,96vw); border:1.5px solid var(--c);
+  box-shadow:0 0 36px rgba(39,232,255,.12); color:var(--c); margin-bottom:20px; }
+#historyModal .mbox-title{ color:var(--c); text-shadow:0 0 12px var(--c); }
+.hist-row{ border:1px solid rgba(39,232,255,.12); padding:11px 13px; margin-bottom:8px;
+  cursor:pointer; transition:all .12s; }
 .hist-row:hover{ border-color:rgba(39,232,255,.35); background:rgba(39,232,255,.04); }
 .hist-row.expanded{ border-color:rgba(39,232,255,.35); background:rgba(39,232,255,.04); }
 .hist-main{ display:flex; justify-content:space-between; align-items:baseline; }
@@ -192,8 +186,7 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
 .hist-dist{ font-size:15px; letter-spacing:.1em; color:var(--c); font-family:Anton,sans-serif; }
 .hist-quick{ display:flex; gap:18px; margin-top:5px; }
 .hist-qs{ font-size:9px; letter-spacing:.2em; color:rgba(57,255,110,.5); }
-.hist-detail{ display:none; margin-top:10px; padding-top:10px;
-  border-top:1px solid rgba(39,232,255,.1); }
+.hist-detail{ display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(39,232,255,.1); }
 .hist-row.expanded .hist-detail{ display:grid; grid-template-columns:1fr 1fr; gap:5px 20px; }
 .hist-kv{ font-size:9px; letter-spacing:.18em; }
 .hist-kv span:first-child{ color:rgba(57,255,110,.35); }
@@ -212,6 +205,7 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
   <button class="v r" id="btnHR">♥ CONNECT HR MONITOR</button>
   <button class="v g" id="btnDemo">▶ DEMO RIDE</button>
   <button class="v a" id="btnHistory" style="display:none">▤ RIDE HISTORY</button>
+  <button class="v g" id="btnPilot" style="display:none">👤 PILOT PROFILE</button>
   <button class="v w" id="btnSettings" style="display:none">⚙ SETTINGS</button>
   <div class="hint">WEB BLUETOOTH · CHROME / EDGE · HTTPS OR LOCALHOST</div>
 </div>
@@ -232,12 +226,10 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
 </div>
 
 <div id="msgBar"></div>
-
 <div id="tray">
   <button id="unitBtn">MI</button>
   GLOW <input type="range" id="glowSlider" min="0" max="200" value="100">
 </div>
-
 <div id="userIndicator">
   <span id="userEmail"></span>
   <button id="btnSignOut" style="display:none">SIGN OUT</button>
@@ -271,31 +263,95 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
   </div>
 </div>
 
+<!-- ── PILOT PROFILE MODAL ─────────────────────────────────── -->
+<div id="pilotModal" class="modal-overlay">
+  <div class="mbox">
+    <div class="mbox-title">
+      <span>👤 PILOT PROFILE</span>
+      <span class="mbox-close" onclick="closePilot()">[ CLOSE ]</span>
+    </div>
+
+    <div class="mbox-section" style="color:var(--g)">IDENTITY</div>
+    <div class="mbox-row">
+      <label>CALL SIGN</label>
+      <input type="text" id="pilotName" placeholder="MAVERICK" maxlength="24">
+    </div>
+    <div class="mbox-row">
+      <label>AGE (YRS)</label>
+      <input type="number" id="pilotAge" min="10" max="99" placeholder="35">
+    </div>
+    <div class="mbox-row">
+      <label id="weightLabel">WEIGHT (LBS)</label>
+      <input type="number" id="pilotWeight" min="30" max="300" placeholder="165">
+    </div>
+
+    <div class="mbox-section" style="color:var(--g)">HEART RATE ZONES</div>
+    <button class="pilot-autozone" id="btnAutoZone" onclick="applyAutoZones()">⚡ AUTO-CALCULATE ZONES FROM AGE</button>
+    <div class="pilot-autozone-hint" id="autoZoneHint">ENTER AGE ABOVE FIRST</div>
+
+    <div class="mbox-row">
+      <label>ZONE 1 · RECOVERY</label>
+      <input type="number" id="pilotZ1" min="60" max="220" placeholder="115">
+    </div>
+    <div class="mbox-row">
+      <label>ZONE 2 · ENDURANCE</label>
+      <input type="number" id="pilotZ2" min="60" max="220" placeholder="152">
+    </div>
+    <div class="mbox-row">
+      <label>ZONE 3 · TEMPO</label>
+      <input type="number" id="pilotZ3" min="60" max="220" placeholder="162">
+    </div>
+    <div class="mbox-row">
+      <label>ZONE 4 · THRESHOLD</label>
+      <input type="number" id="pilotZ4" min="60" max="220" placeholder="174">
+    </div>
+
+    <div class="mbox-actions">
+      <button class="v g sm" onclick="savePilot()">SAVE PILOT</button>
+      <button class="v c sm" onclick="closePilot()">CANCEL</button>
+    </div>
+    <div class="mbox-status" id="pilotStatus"></div>
+  </div>
+</div>
+
 <!-- ── SETTINGS MODAL ──────────────────────────────────────── -->
-<div id="settingsModal">
-  <div id="settingsBox">
-    <div class="set-title">⚙ PILOT SETTINGS</div>
-    <div class="set-section">POWER</div>
-    <div class="set-row"><label>FTP (WATTS)</label><input type="number" id="setFtp" min="50" max="600" value="200"></div>
-    <div class="set-section">HR ZONES (BPM CEILINGS)</div>
-    <div class="set-row"><label>ZONE 1 · RECOVERY</label><input type="number" id="setZ1" min="60" max="200" value="115"></div>
-    <div class="set-row"><label>ZONE 2 · ENDURANCE</label><input type="number" id="setZ2" min="60" max="220" value="152"></div>
-    <div class="set-row"><label>ZONE 3 · TEMPO</label><input type="number" id="setZ3" min="60" max="220" value="162"></div>
-    <div class="set-row"><label>ZONE 4 · THRESHOLD</label><input type="number" id="setZ4" min="60" max="220" value="174"></div>
-    <div class="set-actions">
+<div id="settingsModal" class="modal-overlay">
+  <div class="mbox">
+    <div class="mbox-title">
+      <span>⚙ SETTINGS</span>
+      <span class="mbox-close" onclick="closeSettings()">[ CLOSE ]</span>
+    </div>
+
+    <div class="mbox-section" style="color:var(--a)">POWER</div>
+    <div class="mbox-row">
+      <label>FTP (WATTS)</label>
+      <input type="number" id="setFtp" min="50" max="600" value="200">
+    </div>
+
+    <div class="mbox-section" style="color:var(--a)">DISPLAY</div>
+    <div class="mbox-row" style="align-items:center;">
+      <label>UNITS</label>
+      <span style="font-size:10px;letter-spacing:.22em;opacity:.5;flex:1">TOGGLE MI/KM IN TRAY BOTTOM-RIGHT</span>
+    </div>
+    <div class="mbox-row" style="align-items:center;">
+      <label>GLOW</label>
+      <span style="font-size:10px;letter-spacing:.22em;opacity:.5;flex:1">SLIDER IN TRAY BOTTOM-RIGHT</span>
+    </div>
+
+    <div class="mbox-actions">
       <button class="v a sm" onclick="saveSettings()">SAVE</button>
       <button class="v c sm" onclick="closeSettings()">CANCEL</button>
     </div>
-    <div class="set-status" id="setStatus"></div>
+    <div class="mbox-status" id="setStatus"></div>
   </div>
 </div>
 
 <!-- ── HISTORY MODAL ───────────────────────────────────────── -->
-<div id="historyModal">
-  <div id="historyBox">
-    <div class="hist-title">
+<div id="historyModal" class="modal-overlay">
+  <div class="mbox">
+    <div class="mbox-title">
       <span>▤ RIDE HISTORY</span>
-      <span class="hist-close" onclick="closeHistory()">[ CLOSE ]</span>
+      <span class="mbox-close" onclick="closeHistory()">[ CLOSE ]</span>
     </div>
     <div id="historyList"><div class="hist-loading">LOADING TELEMETRY…</div></div>
   </div>
@@ -304,14 +360,13 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
 <script>
 "use strict";
 
-// ── Supabase ────────────────────────────────────────────────────────────────
+// ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = 'https://bsfyvwmmfpeialgqmngg.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzZnl2d21tZnBlaWFsZ3FtbmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5OTU0OTksImV4cCI6MjA5NzU3MTQ5OX0.gOibou-9meY0h7HmeHgopyr3nvqqaJeKPILoxZuHCrk';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+let currentUser = null;
 
-let currentUser = null;  // supabase user object or null
-
-// ── Canvas ──────────────────────────────────────────────────────────────────
+// ── Canvas ────────────────────────────────────────────────────────────────────
 const cv = document.getElementById('cv');
 const cx = cv.getContext('2d');
 let W=0,H=0,DPR=1;
@@ -323,7 +378,7 @@ function resize(){
 }
 window.addEventListener('resize',resize); resize();
 
-// ── state ───────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
 const S = {
   mode:'title', t:0, last:performance.now(),
   power:0, cadence:0, speedKmh:0, hr:0,
@@ -340,12 +395,14 @@ const S = {
   crank:0, roadScroll:0,
   glow: +(localStorage.getItem('vv_glow')??1),
   imperial: (localStorage.getItem('vv_units')?? 'mi')==='mi',
-  z1:115, z2:152, z3:162, z4:174,
-  ftp:200,
+  // zones & ftp
+  z1:115, z2:152, z3:162, z4:174, ftp:200,
+  // pilot
+  pilotName:'', age:0, weightKg:0,
   best: +(localStorage.getItem('vv_best_m')||0),
 };
 
-// ── helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const $=id=>document.getElementById(id);
 const show=(id,on)=>$(id).classList.toggle('show',!!on);
 function fmtT(s){ s=Math.floor(s); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60; return (h?h+':':'') + String(m).padStart(h?2:1,'0') + ':' + String(x).padStart(2,'0'); }
@@ -354,7 +411,6 @@ function msg(txt,ms=4200){
   const el=$('msgBar'); el.textContent=txt; el.classList.add('show');
   clearTimeout(_mt); if(ms) _mt=setTimeout(()=>el.classList.remove('show'),ms);
 }
-
 function ramp(t){
   t=Math.max(0,Math.min(1,t));
   const stops=[[0,[39,232,255]],[.33,[57,255,110]],[.66,[255,194,52]],[1,[255,59,78]]];
@@ -373,8 +429,47 @@ function hrZone(bpm){
   if(bpm<=S.z4) return {n:4,l:'THRESHOLD'};
   return {n:5,l:'VO2 MAX'};
 }
+// watts per kg — only if we have weight
+function wkg(){ return S.weightKg>0 ? (S.sp/S.weightKg).toFixed(1)+' W/KG' : null; }
 
-// ── Auth UI ─────────────────────────────────────────────────────────────────
+// ── Auto-zones from age ───────────────────────────────────────────────────────
+function calcZonesFromAge(age){
+  const max = 220 - age;
+  return {
+    z1: Math.round(max * 0.50),
+    z2: Math.round(max * 0.60),
+    z3: Math.round(max * 0.70),
+    z4: Math.round(max * 0.80),
+  };
+}
+
+function applyAutoZones(){
+  const age = +$('pilotAge').value;
+  if(!age || age < 10 || age > 99){
+    $('autoZoneHint').textContent = '⚠ ENTER A VALID AGE (10–99) FIRST';
+    return;
+  }
+  const z = calcZonesFromAge(age);
+  $('pilotZ1').value = z.z1;
+  $('pilotZ2').value = z.z2;
+  $('pilotZ3').value = z.z3;
+  $('pilotZ4').value = z.z4;
+  const max = 220 - age;
+  $('autoZoneHint').textContent = `MAX HR ${max} BPM · ZONES SET · EDIT IF KNOWN`;
+}
+
+// update hint when age changes
+function onAgeInput(){
+  const age = +$('pilotAge').value;
+  if(age >= 10 && age <= 99){
+    const max = 220 - age;
+    $('autoZoneHint').textContent = `ESTIMATED MAX HR: ${max} BPM — CLICK TO SET ZONES`;
+  } else {
+    $('autoZoneHint').textContent = 'ENTER AGE ABOVE FIRST';
+  }
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
 let authTab = 'login';
 
 function switchTab(tab){
@@ -385,216 +480,201 @@ function switchTab(tab){
   $('authSubmit').textContent = tab==='login'?'INSERT COIN':'CREATE PILOT';
   $('authErr').textContent = '';
 }
-
-function showAuth(){
-  $('authOverlay').classList.add('show');
-  setTimeout(()=>$('authEmail').focus(), 350);
-}
-function hideAuth(){
-  $('authOverlay').classList.remove('show');
-}
+function showAuth(){ $('authOverlay').classList.add('show'); setTimeout(()=>$('authEmail').focus(),350); }
+function hideAuth(){ $('authOverlay').classList.remove('show'); }
 
 async function doAuth(){
-  const email = $('authEmail').value.trim();
-  const pass  = $('authPass').value;
-  const btn   = $('authSubmit');
-  $('authErr').textContent = '';
-
-  if(!email || !pass){ $('authErr').textContent = 'ENTER EMAIL AND PASSWORD'; return; }
-
+  const email=$('authEmail').value.trim(), pass=$('authPass').value;
+  const btn=$('authSubmit');
+  $('authErr').textContent='';
+  if(!email||!pass){ $('authErr').textContent='ENTER EMAIL AND PASSWORD'; return; }
   if(authTab==='signup'){
-    const conf = $('authConfirm').value;
-    if(pass !== conf){ $('authErr').textContent = 'PASSWORDS DO NOT MATCH'; return; }
-    if(pass.length < 6){ $('authErr').textContent = 'PASSWORD MUST BE 6+ CHARACTERS'; return; }
+    const conf=$('authConfirm').value;
+    if(pass!==conf){ $('authErr').textContent='PASSWORDS DO NOT MATCH'; return; }
+    if(pass.length<6){ $('authErr').textContent='PASSWORD MUST BE 6+ CHARACTERS'; return; }
   }
-
-  btn.disabled = true;
-  btn.textContent = authTab==='login' ? 'AUTHENTICATING…' : 'REGISTERING…';
-
+  btn.disabled=true;
+  btn.textContent=authTab==='login'?'AUTHENTICATING…':'REGISTERING…';
   try{
-    let result;
-    if(authTab==='login'){
-      result = await sb.auth.signInWithPassword({ email, password: pass });
-    } else {
-      result = await sb.auth.signUp({ email, password: pass });
-    }
-
-    if(result.error){ $('authErr').textContent = result.error.message.toUpperCase(); }
-    else {
-      if(authTab==='signup' && !result.data.session){
-        $('authErr').textContent = '';
-        $('authSubmit').textContent = 'CHECK YOUR EMAIL ✓';
-        $('authSubmit').style.borderColor = 'var(--g)';
-        $('authSubmit').style.color = 'var(--g)';
+    const result=authTab==='login'
+      ? await sb.auth.signInWithPassword({email,password:pass})
+      : await sb.auth.signUp({email,password:pass});
+    if(result.error){ $('authErr').textContent=result.error.message.toUpperCase(); }
+    else{
+      if(authTab==='signup'&&!result.data.session){
+        $('authSubmit').textContent='CHECK YOUR EMAIL ✓';
+        $('authSubmit').style.borderColor='var(--g)';
+        $('authSubmit').style.color='var(--g)';
         return;
       }
-      // session is live
-      currentUser = result.data.user;
-      hideAuth();
-      await onLogin();
+      currentUser=result.data.user; hideAuth(); await onLogin();
     }
-  } catch(e){
-    $('authErr').textContent = String(e.message||e).toUpperCase();
-  } finally {
-    if(btn.textContent !== 'CHECK YOUR EMAIL ✓'){
-      btn.disabled = false;
-      btn.textContent = authTab==='login'?'INSERT COIN':'CREATE PILOT';
-    }
-  }
+  }catch(e){ $('authErr').textContent=String(e.message||e).toUpperCase(); }
+  finally{ if(btn.textContent!=='CHECK YOUR EMAIL ✓'){ btn.disabled=false; btn.textContent=authTab==='login'?'INSERT COIN':'CREATE PILOT'; } }
 }
 
-function skipAuth(){
-  hideAuth();
-  updateUserUI(null);
-  msg('GUEST MODE — RIDES NOT SAVED',5000);
-}
+function skipAuth(){ hideAuth(); updateUserUI(null); msg('GUEST MODE — RIDES NOT SAVED',5000); }
 
-// ── Profile / Settings ───────────────────────────────────────────────────────
+// ── Profile / Supabase ────────────────────────────────────────────────────────
 async function loadProfile(){
   if(!currentUser) return;
-  const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if(data){
-    if(data.ftp)      S.ftp      = data.ftp;
-    if(data.z1)       S.z1       = data.z1;
-    if(data.z2)       S.z2       = data.z2;
-    if(data.z3)       S.z3       = data.z3;
-    if(data.z4)       S.z4       = data.z4;
-    if(data.imperial != null) { S.imperial = data.imperial; updateUnitBtn(); }
-    if(data.glow != null){
-      S.glow = data.glow;
-      $('glowSlider').value = Math.round(S.glow*100);
-    }
-  }
-  // no profile yet → will be created on first settings save or after first ride
+  const { data } = await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+  if(!data) return;
+  if(data.ftp)         S.ftp        = data.ftp;
+  if(data.z1)          S.z1         = data.z1;
+  if(data.z2)          S.z2         = data.z2;
+  if(data.z3)          S.z3         = data.z3;
+  if(data.z4)          S.z4         = data.z4;
+  if(data.pilot_name)  S.pilotName  = data.pilot_name;
+  if(data.age)         S.age        = data.age;
+  if(data.weight_kg)   S.weightKg   = data.weight_kg;
+  if(data.imperial!=null){ S.imperial=data.imperial; updateUnitBtn(); }
+  if(data.glow!=null){ S.glow=data.glow; $('glowSlider').value=Math.round(S.glow*100); }
 }
 
 async function upsertProfile(fields){
   if(!currentUser) return;
-  await sb.from('profiles').upsert({ id: currentUser.id, ...fields, updated_at: new Date().toISOString() });
+  await sb.from('profiles').upsert({ id:currentUser.id, ...fields, updated_at:new Date().toISOString() });
 }
 
+// ── Pilot Modal ───────────────────────────────────────────────────────────────
+function openPilot(){
+  $('pilotName').value   = S.pilotName||'';
+  $('pilotAge').value    = S.age||'';
+  const wLabel = S.imperial ? 'WEIGHT (LBS)' : 'WEIGHT (KG)';
+  $('weightLabel').textContent = wLabel;
+  const dispW = S.weightKg>0 ? (S.imperial ? +(S.weightKg*2.20462).toFixed(1) : +S.weightKg.toFixed(1)) : '';
+  $('pilotWeight').value  = dispW||'';
+  $('pilotWeight').placeholder = S.imperial?'165':'75';
+  $('pilotZ1').value      = S.z1;
+  $('pilotZ2').value      = S.z2;
+  $('pilotZ3').value      = S.z3;
+  $('pilotZ4').value      = S.z4;
+  $('pilotStatus').textContent = '';
+  if(S.age>=10) onAgeInput();
+  else $('autoZoneHint').textContent = 'ENTER AGE ABOVE FIRST';
+  $('pilotModal').classList.add('show');
+}
+function closePilot(){ $('pilotModal').classList.remove('show'); }
+
+async function savePilot(){
+  const name   = $('pilotName').value.trim().toUpperCase();
+  const age    = +$('pilotAge').value||0;
+  const wDisp  = +$('pilotWeight').value||0;
+  const wKg    = wDisp>0 ? (S.imperial ? wDisp/2.20462 : wDisp) : 0;
+  const z1=$('pilotZ1').value?+$('pilotZ1').value:S.z1;
+  const z2=$('pilotZ2').value?+$('pilotZ2').value:S.z2;
+  const z3=$('pilotZ3').value?+$('pilotZ3').value:S.z3;
+  const z4=$('pilotZ4').value?+$('pilotZ4').value:S.z4;
+  if(z1>=z2||z2>=z3||z3>=z4){ $('pilotStatus').textContent='⚠ ZONES MUST BE ASCENDING'; return; }
+  Object.assign(S,{ pilotName:name, age, weightKg:+wKg.toFixed(2), z1, z2, z3, z4 });
+  $('pilotStatus').textContent='SAVING…';
+  await upsertProfile({ pilot_name:name||null, age:age||null, weight_kg:wKg||null, z1, z2, z3, z4 });
+  $('pilotStatus').textContent='✓ PILOT DATA SAVED';
+  setTimeout(closePilot,900);
+}
+
+// ── Settings Modal ────────────────────────────────────────────────────────────
 function openSettings(){
   $('setFtp').value = S.ftp;
-  $('setZ1').value  = S.z1;
-  $('setZ2').value  = S.z2;
-  $('setZ3').value  = S.z3;
-  $('setZ4').value  = S.z4;
-  $('setStatus').textContent = '';
+  $('setStatus').textContent='';
   $('settingsModal').classList.add('show');
 }
 function closeSettings(){ $('settingsModal').classList.remove('show'); }
 
 async function saveSettings(){
-  const ftp = +$('setFtp').value;
-  const z1  = +$('setZ1').value;
-  const z2  = +$('setZ2').value;
-  const z3  = +$('setZ3').value;
-  const z4  = +$('setZ4').value;
-  if(z1>=z2||z2>=z3||z3>=z4){ $('setStatus').textContent='⚠ ZONES MUST BE ASCENDING'; return; }
-  Object.assign(S, { ftp, z1, z2, z3, z4 });
-  $('setStatus').textContent = 'SAVING…';
-  await upsertProfile({ ftp, z1, z2, z3, z4, imperial: S.imperial, glow: S.glow });
-  $('setStatus').textContent = '✓ SAVED';
-  setTimeout(closeSettings, 900);
+  const ftp=+$('setFtp').value;
+  if(!ftp||ftp<50){ $('setStatus').textContent='⚠ ENTER A VALID FTP'; return; }
+  S.ftp=ftp;
+  $('setStatus').textContent='SAVING…';
+  await upsertProfile({ ftp, imperial:S.imperial, glow:S.glow });
+  $('setStatus').textContent='✓ SAVED';
+  setTimeout(closeSettings,900);
 }
 
-// ── Ride History ─────────────────────────────────────────────────────────────
+// ── History Modal ─────────────────────────────────────────────────────────────
 async function openHistory(){
   $('historyModal').classList.add('show');
-  $('historyList').innerHTML = '<div class="hist-loading">LOADING TELEMETRY…</div>';
+  $('historyList').innerHTML='<div class="hist-loading">LOADING TELEMETRY…</div>';
   if(!currentUser){ $('historyList').innerHTML='<div class="hist-empty">SIGN IN TO VIEW HISTORY</div>'; return; }
-  const { data, error } = await sb.from('rides').select('*').eq('user_id', currentUser.id).order('created_at', { ascending:false }).limit(50);
-  if(error || !data || !data.length){ $('historyList').innerHTML='<div class="hist-empty">NO RIDES RECORDED YET</div>'; return; }
-  $('historyList').innerHTML = data.map(r=>renderRideRow(r)).join('');
-  // click to expand
-  $('historyList').querySelectorAll('.hist-row').forEach(el=>{
-    el.addEventListener('click',()=>el.classList.toggle('expanded'));
-  });
+  const { data,error }=await sb.from('rides').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(50);
+  if(error||!data||!data.length){ $('historyList').innerHTML='<div class="hist-empty">NO RIDES RECORDED YET</div>'; return; }
+  $('historyList').innerHTML=data.map(renderRideRow).join('');
+  $('historyList').querySelectorAll('.hist-row').forEach(el=>el.addEventListener('click',()=>el.classList.toggle('expanded')));
 }
 function closeHistory(){ $('historyModal').classList.remove('show'); }
 
 function renderRideRow(r){
-  const imp = S.imperial;
-  const dist = imp ? (r.distance_m/1609.344).toFixed(2)+' MI' : (r.distance_m/1000).toFixed(2)+' KM';
-  const spd  = imp ? (r.max_speed_kmh*.621371).toFixed(1)+' MPH' : r.max_speed_kmh.toFixed(1)+' KMH';
-  const dt   = new Date(r.created_at);
-  const dateStr = dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase()
-                + ' · ' + dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const imp=S.imperial;
+  const dist=imp?(r.distance_m/1609.344).toFixed(2)+' MI':(r.distance_m/1000).toFixed(2)+' KM';
+  const spd=imp?(r.max_speed_kmh*.621371).toFixed(1)+' MPH':r.max_speed_kmh.toFixed(1)+' KMH';
+  const dt=new Date(r.created_at);
+  const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase()+' · '+dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const wkgStr=r.avg_wkg?r.avg_wkg.toFixed(2)+' W/KG':'--';
   return `<div class="hist-row">
-    <div class="hist-main">
-      <span class="hist-date">${dateStr}</span>
-      <span class="hist-dist">${dist}</span>
-    </div>
-    <div class="hist-quick">
-      <span class="hist-qs">${fmtT(r.elapsed_seconds)} · ${r.avg_power}W AVG · ${r.energy_kj}KJ</span>
-    </div>
+    <div class="hist-main"><span class="hist-date">${dateStr}</span><span class="hist-dist">${dist}</span></div>
+    <div class="hist-quick"><span class="hist-qs">${fmtT(r.elapsed_seconds)} · ${r.avg_power}W AVG · ${r.energy_kj}KJ</span></div>
     <div class="hist-detail">
       <div class="hist-kv"><span>AVG POWER </span><span>${r.avg_power} W</span></div>
       <div class="hist-kv"><span>MAX POWER </span><span>${r.max_power} W</span></div>
+      <div class="hist-kv"><span>W/KG </span><span>${wkgStr}</span></div>
       <div class="hist-kv"><span>AVG HR </span><span>${r.avg_hr||'--'} BPM</span></div>
       <div class="hist-kv"><span>MAX HR </span><span>${r.max_hr||'--'} BPM</span></div>
       <div class="hist-kv"><span>MAX SPEED </span><span>${spd}</span></div>
       <div class="hist-kv"><span>ENERGY </span><span>${r.energy_kj} KJ</span></div>
       <div class="hist-kv"><span>ELAPSED </span><span>${fmtT(r.elapsed_seconds)}</span></div>
-      <div class="hist-kv"><span>SCORE </span><span>${String(r.energy_kj).padStart(6,'0')}</span></div>
     </div>
   </div>`;
 }
 
 async function saveRide(){
-  if(!currentUser) return;
-  if(S.elapsed < 30) return;  // don't save rides under 30s
-  const ride = {
-    user_id:       currentUser.id,
-    elapsed_seconds: Math.round(S.elapsed),
-    distance_m:    Math.round(S.distM),
-    avg_power:     Math.round(S.avgPower),
-    max_power:     Math.round(S.maxPower),
-    avg_hr:        S._hN > 0 ? Math.round(S._hSum/S._hN) : null,
-    max_hr:        S.maxHr || null,
-    max_speed_kmh: +S.maxSpeedKmh.toFixed(2),
-    energy_kj:     Math.round(S.kJ),
-    created_at:    S.startTime.toISOString(),
+  if(!currentUser||S.elapsed<30) return;
+  const avgWkg = S.weightKg>0 ? +(S.avgPower/S.weightKg).toFixed(2) : null;
+  const ride={
+    user_id:currentUser.id,
+    elapsed_seconds:Math.round(S.elapsed),
+    distance_m:Math.round(S.distM),
+    avg_power:Math.round(S.avgPower),
+    max_power:Math.round(S.maxPower),
+    avg_hr:S._hN>0?Math.round(S._hSum/S._hN):null,
+    max_hr:S.maxHr||null,
+    max_speed_kmh:+S.maxSpeedKmh.toFixed(2),
+    energy_kj:Math.round(S.kJ),
+    avg_wkg:avgWkg,
+    created_at:S.startTime.toISOString(),
   };
-  const { error } = await sb.from('rides').insert(ride);
+  const { error }=await sb.from('rides').insert(ride);
   if(!error) msg('RIDE SAVED TO YOUR HISTORY',4000);
 }
 
-// ── User UI state ────────────────────────────────────────────────────────────
+// ── User UI ───────────────────────────────────────────────────────────────────
+function updateUnitBtn(){ $('unitBtn').textContent=S.imperial?'MI':'KM'; }
+
 function updateUserUI(user){
-  currentUser = user;
-  if(user){
-    $('userEmail').textContent = user.email;
-    $('btnSignOut').style.display = 'inline';
-    $('btnAuthOpen').style.display = 'none';
-    $('btnHistory').style.display = 'inline-block';
-    $('btnSettings').style.display = 'inline-block';
-    $('saveHint').textContent = 'RIDE SAVED · TCX ALSO AVAILABLE';
-  } else {
-    $('userEmail').textContent = 'GUEST';
-    $('btnSignOut').style.display = 'none';
-    $('btnAuthOpen').style.display = 'inline-block';
-    $('btnHistory').style.display = 'none';
-    $('btnSettings').style.display = 'none';
-    $('saveHint').textContent = 'SAVE TCX FIRST · STRAVA OPENS UPLOAD PAGE';
-  }
+  currentUser=user;
+  const loggedIn=!!user;
+  $('userEmail').textContent=loggedIn?(S.pilotName||user.email):'GUEST';
+  $('btnSignOut').style.display=loggedIn?'inline':'none';
+  $('btnAuthOpen').style.display=loggedIn?'none':'inline-block';
+  $('btnHistory').style.display=loggedIn?'inline-block':'none';
+  $('btnPilot').style.display=loggedIn?'inline-block':'none';
+  $('btnSettings').style.display=loggedIn?'inline-block':'none';
+  $('saveHint').textContent=loggedIn?'RIDE SAVED · TCX ALSO AVAILABLE':'SAVE TCX FIRST · STRAVA OPENS UPLOAD PAGE';
 }
 
 async function onLogin(){
-  updateUserUI(currentUser);
   await loadProfile();
+  updateUserUI(currentUser);
   updateUnitBtn();
-  msg('WELCOME BACK, '+currentUser.email.split('@')[0].toUpperCase(),4000);
+  const name=S.pilotName||currentUser.email.split('@')[0].toUpperCase();
+  msg('WELCOME BACK, '+name,4000);
+  // prompt pilot setup if no profile yet
+  if(!S.pilotName&&!S.age) setTimeout(()=>{ openPilot(); msg('SET UP YOUR PILOT PROFILE',5000); },1500);
 }
 
-async function signOut(){
-  await sb.auth.signOut();
-  currentUser = null;
-  updateUserUI(null);
-  msg('SIGNED OUT',3000);
-}
+async function signOut(){ await sb.auth.signOut(); currentUser=null; S.pilotName=''; S.age=0; S.weightKg=0; updateUserUI(null); msg('SIGNED OUT',3000); }
 
-// ── Bluetooth ───────────────────────────────────────────────────────────────
+// ── Bluetooth ─────────────────────────────────────────────────────────────────
 const FTMS=0x1826,IBD=0x2AD2,FTMS_CP=0x2AD9,CPS=0x1818,CPM=0x2A63,HRS=0x180D,HRM=0x2A37;
 
 async function connectBike(){
@@ -613,11 +693,7 @@ async function connectBike(){
       await ibd.startNotifications();
       ibd.addEventListener('characteristicvaluechanged',e=>parseIBD(e.target.value));
       S.ble.mode='ftms';
-      try{
-        const ctl=await svc.getCharacteristic(FTMS_CP);
-        await ctl.startNotifications(); await ctl.writeValue(Uint8Array.of(0x00));
-        S.ble.control=ctl;
-      }catch(_){}
+      try{ const ctl=await svc.getCharacteristic(FTMS_CP); await ctl.startNotifications(); await ctl.writeValue(Uint8Array.of(0x00)); S.ble.control=ctl; }catch(_){}
     }catch(_){
       const svc=await srv.getPrimaryService(CPS);
       const cpm=await svc.getCharacteristic(CPM);
@@ -625,19 +701,10 @@ async function connectBike(){
       cpm.addEventListener('characteristicvaluechanged',e=>parseCPS(e.target.value));
       S.ble.mode='cps';
     }
-    try{
-      const hs=await srv.getPrimaryService(HRS);
-      const hc=await hs.getCharacteristic(HRM);
-      await hc.startNotifications();
-      hc.addEventListener('characteristicvaluechanged',e=>parseHR(e.target.value));
-      setHRled(true);
-    }catch(_){}
+    try{ const hs=await srv.getPrimaryService(HRS); const hc=await hs.getCharacteristic(HRM); await hc.startNotifications(); hc.addEventListener('characteristicvaluechanged',e=>parseHR(e.target.value)); setHRled(true); }catch(_){}
     msg('LINKED: '+(dev.name||'TRAINER')+' ['+S.ble.mode.toUpperCase()+']',5000);
     startRide(false);
-  }catch(e){
-    if(e&&e.name==='NotFoundError') msg('SCAN CANCELLED',3000);
-    else msg('BT ERROR: '+(e.message||e),7000);
-  }
+  }catch(e){ if(e&&e.name==='NotFoundError') msg('SCAN CANCELLED',3000); else msg('BT ERROR: '+(e.message||e),7000); }
 }
 
 async function connectHR(){
@@ -656,22 +723,15 @@ async function connectHR(){
     ch.addEventListener('characteristicvaluechanged',e=>parseHR(e.target.value));
     setHRled(true);
     msg('HR LINKED: '+(dev.name||'MONITOR'),4000);
-  }catch(e){
-    if(e&&e.name==='NotFoundError') msg('HR SCAN CANCELLED',3000);
-    else msg('HR ERROR: '+(e.message||e),5000);
-  }
+  }catch(e){ if(e&&e.name==='NotFoundError') msg('HR SCAN CANCELLED',3000); else msg('HR ERROR: '+(e.message||e),5000); }
 }
 
 function setHRled(on){
-  S.hrConnected=on;
-  $('hrDot').classList.toggle('on',on);
+  S.hrConnected=on; $('hrDot').classList.toggle('on',on);
   $('btnHRride').style.display=on?'none':'inline-block';
-  if($('btnHR')) $('btnHR').classList.toggle('linked',on);
-  if($('btnHR')) $('btnHR').textContent=on?'♥ HR MONITOR LINKED':'♥ CONNECT HR MONITOR';
+  if($('btnHR')){ $('btnHR').classList.toggle('linked',on); $('btnHR').textContent=on?'♥ HR MONITOR LINKED':'♥ CONNECT HR MONITOR'; }
 }
-
 function parseHR(dv){ S.hr=(dv.getUint8(0)&1)?dv.getUint16(1,true):dv.getUint8(1); }
-
 function parseIBD(dv){
   let o=0; const f=dv.getUint16(o,true); o+=2;
   if(!(f&0x0001)){ S.speedKmh=dv.getUint16(o,true)/100; o+=2; }
@@ -683,7 +743,6 @@ function parseIBD(dv){
   if(f&0x0040){ S.power=Math.max(0,dv.getInt16(o,true)); o+=2; }
   if(f&0x0200){ S.hr=dv.getUint8(o); setHRled(true); }
 }
-
 function parseCPS(dv){
   const f=dv.getUint16(0,true); S.power=Math.max(0,dv.getInt16(2,true)); let o=4;
   if(f&0x0001)o+=1; if(f&0x0004)o+=2; if(f&0x0010)o+=6;
@@ -694,10 +753,9 @@ function parseCPS(dv){
   }
   S.speedKmh=p2v(S.power);
 }
-
 function p2v(p){ return p<=0?0:3.6*Math.cbrt(p/0.19); }
 
-// ── ride lifecycle ──────────────────────────────────────────────────────────
+// ── Ride lifecycle ────────────────────────────────────────────────────────────
 function startRide(demo){
   Object.assign(S,{ mode:'ride', demo, startTime:new Date(), elapsed:0, distM:0, kJ:0,
     maxPower:0, avgPower:0, _pSum:0, _pN:0,
@@ -710,22 +768,18 @@ function startRide(demo){
 }
 
 async function endRide(){
-  S.mode='done';
-  show('ridePanel',false); show('endPanel',true);
+  S.mode='done'; show('ridePanel',false); show('endPanel',true);
   if(S.distM>S.best){ S.best=S.distM; localStorage.setItem('vv_best_m',String(Math.round(S.distM))); msg('★ NEW DISTANCE RECORD ★',6000); }
   await saveRide();
 }
 
-function resetTitle(){
-  S.mode='title';
-  show('endPanel',false); show('menuPanel',true);
-}
+function resetTitle(){ S.mode='title'; show('endPanel',false); show('menuPanel',true); }
 
 function recordSample(){
   S.samples.push({ t:new Date().toISOString(), distM:S.distM, power:Math.round(S.power), cad:Math.round(S.cadence), speedMs:S.speedKmh/3.6, hr:S.hr||null });
 }
 
-// ── TCX export ──────────────────────────────────────────────────────────────
+// ── TCX ───────────────────────────────────────────────────────────────────────
 function buildTCX(){
   const start=S.samples[0]?.t??S.startTime.toISOString();
   const pts=S.samples.map(s=>`
@@ -759,22 +813,19 @@ function buildTCX(){
   </Activity></Activities>
 </TrainingCenterDatabase>`;
 }
-
 function downloadTCX(){
   if(!S.samples.length){ msg('NO RIDE DATA',3000); return; }
   const blob=new Blob([buildTCX()],{type:'application/vnd.garmin.tcx+xml'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='vectorvelo-'+S.startTime.toISOString().slice(0,16).replace(/[:T]/g,'-')+'.tcx';
   a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
   msg('TCX SAVED — UPLOAD AT STRAVA.COM/UPLOAD',6000);
 }
 
-// ── update ───────────────────────────────────────────────────────────────────
+// ── Update ────────────────────────────────────────────────────────────────────
 function update(dt){
   S.t+=dt;
   if(S.mode!=='ride') return;
-
   if(S.demo){
     const w=Math.sin(S.t*.7)*22+Math.sin(S.t*2.3)*9+(Math.random()-.5)*14;
     S.power=Math.max(0,S.demoEffort+w);
@@ -782,15 +833,10 @@ function update(dt){
     S.speedKmh=p2v(S.power);
     S.hr=Math.round(95+Math.min(85,S.power*.32)+Math.sin(S.t*.2)*4);
   }
-
   const k=1-Math.pow(0.001,dt);
-  S.sp+=(S.power-S.sp)*k;
-  S.sc+=(S.cadence-S.sc)*k;
-  S.ss+=(S.speedKmh-S.ss)*k;
-  S.sh+=(S.hr-S.sh)*Math.min(k,.04);
-
-  S.elapsed+=dt;
-  S.kJ+=S.power*dt/1000;
+  S.sp+=(S.power-S.sp)*k; S.sc+=(S.cadence-S.sc)*k;
+  S.ss+=(S.speedKmh-S.ss)*k; S.sh+=(S.hr-S.sh)*Math.min(k,.04);
+  S.elapsed+=dt; S.kJ+=S.power*dt/1000;
   if(S.power>S.maxPower) S.maxPower=S.power;
   if(S.hr>S.maxHr) S.maxHr=S.hr;
   if(S.hr>0){ S._hSum+=S.hr*dt; S._hN+=dt; }
@@ -798,47 +844,34 @@ function update(dt){
   if(S.power>0){ S._pSum+=S.power*dt; S._pN+=dt; S.avgPower=S._pSum/Math.max(1e-6,S._pN); }
   if(S.deviceDistBase!==null&&S.deviceDistLast!==null) S.distM=S.deviceDistLast-S.deviceDistBase;
   else S.distM+=(S.speedKmh/3.6)*dt;
-
   const w=Math.floor(S.distM/5000)+1;
   if(w!==S.wave){ S.wave=w; S.waveFlash=3; S.shake=.6; }
   if(S.waveFlash>0) S.waveFlash-=dt;
   if(S.shake>0) S.shake-=dt*2;
-
   if(S.elapsed-S._lastSample>=1){ S._lastSample=S.elapsed; recordSample(); }
 }
 
-// ── drawing helpers ──────────────────────────────────────────────────────────
-function gl(color,blur=12,width=1.6){
-  cx.strokeStyle=color; cx.lineWidth=width;
-  cx.shadowColor=color; cx.shadowBlur=blur*S.glow;
-  cx.lineJoin='round'; cx.lineCap='round';
-}
+// ── Drawing helpers ───────────────────────────────────────────────────────────
+function gl(color,blur=12,width=1.6){ cx.strokeStyle=color; cx.lineWidth=width; cx.shadowColor=color; cx.shadowBlur=blur*S.glow; cx.lineJoin='round'; cx.lineCap='round'; }
 function ng(){ cx.shadowBlur=0; }
-
 function bigStat(txt,x,y,size,color,maxW,right=false){
-  cx.save();
-  cx.font=`${size}px Anton,"Arial Black",Impact,sans-serif`;
+  cx.save(); cx.font=`${size}px Anton,"Arial Black",Impact,sans-serif`;
   let w=cx.measureText(txt).width;
   if(w>maxW){ size*=maxW/w; cx.font=`${size}px Anton,"Arial Black",Impact,sans-serif`; w=cx.measureText(txt).width; }
   if(right) x-=w;
-  cx.textAlign='left'; cx.textBaseline='alphabetic';
-  cx.lineWidth=Math.max(1.4,size/28);
+  cx.textAlign='left'; cx.textBaseline='alphabetic'; cx.lineWidth=Math.max(1.4,size/28);
   cx.strokeStyle=color; cx.shadowColor=color; cx.shadowBlur=3*S.glow;
   cx.strokeText(txt,x,y); cx.restore();
 }
-
 function vecText(str,x,y,size,color,align='left',blur=8){
-  cx.save();
-  cx.font=`bold ${size}px "Courier New",monospace`;
-  cx.textAlign='left'; cx.textBaseline='alphabetic';
-  cx.lineWidth=Math.max(.8,size/22);
+  cx.save(); cx.font=`bold ${size}px "Courier New",monospace`;
+  cx.textAlign='left'; cx.textBaseline='alphabetic'; cx.lineWidth=Math.max(.8,size/22);
   cx.strokeStyle=color; cx.shadowColor=color; cx.shadowBlur=blur*S.glow;
   const ls=size*.18;
   if(align!=='left'){ let tot=0; for(const c of str) tot+=cx.measureText(c).width+ls; tot-=ls; x-=align==='center'?tot/2:tot; }
   for(const ch of str){ cx.strokeText(ch,x,y); x+=cx.measureText(ch).width+ls; }
   cx.restore();
 }
-
 function bar(x,y,w,h,frac,color,segs=24){
   gl(color,6,1); cx.strokeRect(x,y,w,h); ng();
   for(let i=0;i<segs;i++){
@@ -848,7 +881,7 @@ function bar(x,y,w,h,frac,color,segs=24){
   }
 }
 
-// ── scene objects ────────────────────────────────────────────────────────────
+// ── Scene ─────────────────────────────────────────────────────────────────────
 const stars=Array.from({length:90},()=>({x:Math.random(),y:Math.random()*.55,s:Math.random()}));
 function drawStars(hy){
   ng();
@@ -858,7 +891,6 @@ function drawStars(hy){
     cx.fillRect(st.x*W,st.y*hy,st.s>.8?2:1,st.s>.8?2:1);
   }
 }
-
 function makeRock(){
   const n=8+(Math.random()*4|0);
   return { verts:Array.from({length:n},(_,i)=>{ const a=i/n*Math.PI*2,r=.6+Math.random()*.45; return [Math.cos(a)*r,Math.sin(a)*r]; }),
@@ -876,17 +908,14 @@ function drawRocks(hy,dt){
     cx.closePath(); cx.stroke(); cx.restore();
   }
 }
-
 function drawMountains(hy){
-  gl('rgba(39,232,255,0.5)',7,1.2);
-  cx.beginPath();
+  gl('rgba(39,232,255,0.5)',7,1.2); cx.beginPath();
   for(let i=0;i<=26;i++){
     const x=i/26*W, ph=i*1.7+Math.floor(S.distM/40)*.013, y=hy-Math.abs(Math.sin(ph)*Math.cos(ph*.37))*H*.05-2;
     i?cx.lineTo(x,y):cx.moveTo(x,y);
   }
   cx.stroke();
 }
-
 function drawRoad(hy,dt){
   const vp={x:W/2+Math.sin(S.distM/900)*W*.06,y:hy}, bh=W*.62, LANES=8;
   gl('#27e8ff',13,1.7);
@@ -900,22 +929,18 @@ function drawRoad(hy,dt){
   }
   cx.globalAlpha=1;
 }
-
 function drawBike(dt){
   S.crank+=(S.sc/60)*Math.PI*2*dt;
   const u=Math.min(W,H)*.082;
   const rock=Math.sin(S.crank)*(.018+Math.min(.045,S.sp/9000));
   const bob=Math.sin(S.crank*2)*u*.02;
   cx.save(); cx.translate(W/2,H*.88+bob); cx.rotate(rock);
-
   gl('#39ff6e',9,1.6);
   const wr=u*.62;
   cx.beginPath(); cx.ellipse(0,0,wr*.15,wr,0,0,Math.PI*2); cx.stroke();
   const va=S.crank*2.1; cx.beginPath(); cx.arc(Math.cos(va)*wr*.12,Math.sin(va)*wr*.88,1.6,0,Math.PI*2); cx.stroke();
-
   gl('#27e8ff',10,1.5);
   cx.beginPath(); cx.moveTo(-wr*.6,-wr*.08); cx.lineTo(wr*.6,-wr*.08); cx.stroke();
-
   const sad={x:0,y:-u*1.46};
   cx.beginPath();
   cx.moveTo(0,-wr*.08); cx.lineTo(sad.x,sad.y);
@@ -923,7 +948,6 @@ function drawBike(dt){
   cx.moveTo( wr*.15,-wr*.05); cx.lineTo( u*.05,sad.y+u*.2);
   cx.moveTo(-u*.14,sad.y); cx.lineTo(u*.14,sad.y);
   cx.stroke();
-
   const barY=-u*1.76, bh2=u*.45;
   cx.beginPath();
   cx.moveTo(-bh2,barY); cx.lineTo(bh2,barY);
@@ -931,26 +955,18 @@ function drawBike(dt){
   cx.moveTo( bh2,barY); cx.lineTo( bh2,barY+u*.16);
   cx.moveTo(0,barY);    cx.lineTo(0,barY+u*.3);
   cx.stroke();
-
   gl('#39ff6e',10,1.7);
   const hipY=sad.y-u*.06;
   const hipL={x:-u*.17,y:hipY}, hipR={x:u*.17,y:hipY};
   const shL={x:-u*.40,y:-u*2.30}, shR={x:u*.40,y:-u*2.30};
-
   cx.beginPath();
   cx.moveTo(hipL.x-u*.05,hipL.y); cx.lineTo(shL.x,shL.y);
   cx.lineTo(shR.x,shR.y); cx.lineTo(hipR.x+u*.05,hipR.y);
   cx.closePath(); cx.stroke();
-
   cx.beginPath(); cx.arc(0,-u*2.60,u*.21,0,Math.PI*2); cx.stroke();
   cx.beginPath(); cx.arc(0,-u*2.64,u*.26,Math.PI*1.12,Math.PI*1.88); cx.stroke();
-
-  function arm(sh,hx){
-    const hand={x:hx,y:barY+u*.02}, elb={x:sh.x*1.28,y:(sh.y+hand.y)/2+u*.04};
-    cx.beginPath(); cx.moveTo(sh.x,sh.y); cx.lineTo(elb.x,elb.y); cx.lineTo(hand.x,hand.y); cx.stroke();
-  }
+  function arm(sh,hx){ const hand={x:hx,y:barY+u*.02},elb={x:sh.x*1.28,y:(sh.y+hand.y)/2+u*.04}; cx.beginPath(); cx.moveTo(sh.x,sh.y); cx.lineTo(elb.x,elb.y); cx.lineTo(hand.x,hand.y); cx.stroke(); }
   arm(shL,-bh2*.9); arm(shR,bh2*.9);
-
   function leg(hip,side,phase){
     const foot={x:side*u*.27,y:-wr*.5+Math.cos(S.crank+phase)*u*.34};
     const lift=.5-Math.cos(S.crank+phase)/2;
@@ -959,7 +975,6 @@ function drawBike(dt){
     cx.beginPath(); cx.moveTo(foot.x-u*.09,foot.y); cx.lineTo(foot.x+u*.09,foot.y); cx.stroke();
   }
   leg(hipL,-1,Math.PI); leg(hipR,1,0);
-
   if(S.sp>240){
     gl('#ffc234',11,1.3);
     const f=u*.2+(S.sp-240)/700*u+Math.random()*u*.08;
@@ -968,14 +983,16 @@ function drawBike(dt){
   cx.restore();
 }
 
-// ── HUD ──────────────────────────────────────────────────────────────────────
+// ── HUD ───────────────────────────────────────────────────────────────────────
 function drawHUD(){
   const m=Math.round(W*.02), col=W/3-m, bottom=H-64;
   const imp=S.imperial;
   const mph=imp?S.ss*.621371:S.ss;
   const dist=imp?S.distM/1609.344:S.distM/1000;
   const ftpFrac=Math.min(1,S.sp/Math.max(1,S.ftp*1.2));
+  const wkgVal=wkg();
 
+  // left stack
   const rows=[
     [Math.round(S.power)+' W',           ramp(S.sp/Math.max(1,S.ftp*1.2))],
     [Math.round(mph)+(imp?' MPH':' KMH'), ramp(S.ss/45)],
@@ -991,7 +1008,13 @@ function drawHUD(){
     if(i===0){ bar(m,y+rowH*.16,col,barH,ftpFrac,rows[0][1],24); y+=barSpace; }
     y+=rowH;
   }
+  // W/KG below watts bar (only if weight set)
+  if(wkgVal){
+    const wkgY=bottom-(n-1)*rowH-barSpace+rowH*.16+barH+14;
+    vecText(wkgVal,m,wkgY,11,ramp(S.sp/Math.max(1,S.ftp*1.2)),'left',3);
+  }
 
+  // right: HR
   const hrTopY=bottom-(n-1)*rowH-barSpace;
   const hrBarY=hrTopY+rowH*.16;
   if(S.hr>0){
@@ -1005,6 +1028,7 @@ function drawHUD(){
     if(!S.hrConnected) vecText('TAP ♥ TO CONNECT',W-m,hrBarY+barH+14,11,'rgba(255,59,78,0.35)','right',2);
   }
 
+  // right bottom: TIME / AVG W / SCORE
   const rRow=rowH*.5;
   const rRows=[['TIME '+fmtT(S.elapsed),'#eaffe9'],['AVG '+Math.round(S.avgPower)+' W','#39ff6e'],['SCORE '+String(Math.round(S.kJ)).padStart(6,'0'),'#ffc234']];
   let ry=bottom-rRow*(rRows.length-1);
@@ -1015,14 +1039,16 @@ function drawHUD(){
   if(S.demo) vecText('DEMO',W/2,H-14,11,'rgba(57,255,110,0.28)','center',3);
 }
 
-// ── screens ──────────────────────────────────────────────────────────────────
+// ── Screens ───────────────────────────────────────────────────────────────────
 function drawTitle(){
   const hy=H*.46;
   drawStars(hy); drawRocks(hy,1/60); drawMountains(hy); drawRoad(hy,1/60);
   S.ss=24;
   vecText('VECTOR',W/2,H*.22,Math.min(80,W/9),'#39ff6e','center',20);
   vecText('VELO',  W/2,H*.22+Math.min(92,W/8),Math.min(80,W/9),'#27e8ff','center',20);
-  if(Math.sin(S.t*3.2)>-.25) vecText('INSERT WATTS TO PLAY',W/2,H*.6,16,'#ffc234','center');
+  const prompt = S.pilotName ? 'WELCOME BACK, '+S.pilotName : 'INSERT WATTS TO PLAY';
+  const promptColor = S.pilotName ? '#39ff6e' : '#ffc234';
+  if(Math.sin(S.t*3.2)>-.25) vecText(prompt,W/2,H*.6,16,promptColor,'center');
   if(S.best>0) vecText('HIGH SCORE '+(S.imperial?(S.best/1609.344).toFixed(2)+' MI':(S.best/1000).toFixed(2)+' KM'),W/2,H*.66,13,'rgba(57,255,110,.3)','center');
   vecText('© 2026 MOSTLY CLICKS AMUSEMENTS · VECTORVELO.APP',W/2,H-42,10,'rgba(57,255,110,.2)','center',3);
 }
@@ -1032,7 +1058,13 @@ function drawDone(){
   vecText('RIDE COMPLETE',W/2,H*.18,Math.min(44,W/12),'#ffc234','center',18);
   const imp=S.imperial;
   const dist=imp?(S.distM/1609.344).toFixed(2)+' MI':(S.distM/1000).toFixed(2)+' KM';
-  const rows=[['TIME',fmtT(S.elapsed)],['DIST',dist],['AVG PWR',Math.round(S.avgPower)+' W'],['MAX PWR',Math.round(S.maxPower)+' W'],['ENERGY',Math.round(S.kJ)+' KJ'],['SCORE',String(Math.round(S.kJ)).padStart(6,'0')]];
+  const wkgFinal=S.weightKg>0?(S.avgPower/S.weightKg).toFixed(2)+' W/KG':null;
+  const rows=[
+    ['TIME',fmtT(S.elapsed)],['DIST',dist],
+    ['AVG PWR',Math.round(S.avgPower)+' W'],['MAX PWR',Math.round(S.maxPower)+' W'],
+    ...(wkgFinal?[['W/KG',wkgFinal]]:[]),
+    ['ENERGY',Math.round(S.kJ)+' KJ'],['SCORE',String(Math.round(S.kJ)).padStart(6,'0')]
+  ];
   let y=H*.28;
   for(const [k,v] of rows){ vecText(k,W/2-36,y,17,'rgba(57,255,110,.4)','right',4); vecText(v,W/2+36,y,17,'#39ff6e','left',5); y+=34; }
   if(Math.sin(S.t*3)>0) vecText('SAVE OR SHARE BELOW ▼',W/2,y+18,12,'#27e8ff','center');
@@ -1045,12 +1077,10 @@ function drawRide(dt){
   drawBike(dt); drawHUD();
 }
 
-// ── main loop ─────────────────────────────────────────────────────────────────
+// ── Main loop ─────────────────────────────────────────────────────────────────
 function frame(now){
-  const dt=Math.min(.05,(now-S.last)/1000); S.last=now;
-  update(dt);
-  cx.save();
-  cx.fillStyle='rgba(2,4,3,0.55)'; cx.fillRect(0,0,W,H);
+  const dt=Math.min(.05,(now-S.last)/1000); S.last=now; update(dt);
+  cx.save(); cx.fillStyle='rgba(2,4,3,0.55)'; cx.fillRect(0,0,W,H);
   if(S.mode==='title') drawTitle();
   else if(S.mode==='ride') drawRide(dt);
   else drawDone();
@@ -1068,36 +1098,30 @@ $('btnEnd').onclick     = endRide;
 $('btnAgain').onclick   = resetTitle;
 $('btnTcx').onclick     = downloadTCX;
 $('btnHistory').onclick = openHistory;
+$('btnPilot').onclick   = openPilot;
 $('btnSettings').onclick= openSettings;
 $('btnSignOut').onclick = signOut;
 $('btnAuthOpen').onclick= showAuth;
 $('authSubmit').onclick = doAuth;
 $('btnStrava').onclick  = ()=>{ if(S.samples.length) downloadTCX(); window.open('https://www.strava.com/upload/select','_blank'); };
+$('pilotAge').addEventListener('input', onAgeInput);
 
-// enter key in auth fields
 [$('authEmail'),$('authPass'),$('authConfirm')].forEach(el=>{ if(el) el.addEventListener('keydown',e=>{ if(e.key==='Enter') doAuth(); }); });
 
-// close modals on backdrop click
+// backdrop close
 $('settingsModal').addEventListener('click',e=>{ if(e.target===$('settingsModal')) closeSettings(); });
 $('historyModal').addEventListener('click',e=>{ if(e.target===$('historyModal')) closeHistory(); });
+$('pilotModal').addEventListener('click',e=>{ if(e.target===$('pilotModal')) closePilot(); });
 
-// glow slider
-function updateUnitBtn(){ $('unitBtn').textContent=S.imperial?'MI':'KM'; }
+// glow
 const gs=$('glowSlider');
 gs.value=Math.round(S.glow*100);
-gs.oninput=()=>{
-  S.glow=gs.value/100; localStorage.setItem('vv_glow',String(S.glow));
-  if(currentUser) upsertProfile({ glow: S.glow });
-};
+gs.oninput=()=>{ S.glow=gs.value/100; localStorage.setItem('vv_glow',String(S.glow)); if(currentUser) upsertProfile({glow:S.glow}); };
 
-// units toggle
+// units
 const ub=$('unitBtn');
 ub.textContent=S.imperial?'MI':'KM';
-ub.onclick=()=>{
-  S.imperial=!S.imperial; updateUnitBtn();
-  localStorage.setItem('vv_units',S.imperial?'mi':'km');
-  if(currentUser) upsertProfile({ imperial: S.imperial });
-};
+ub.onclick=()=>{ S.imperial=!S.imperial; updateUnitBtn(); localStorage.setItem('vv_units',S.imperial?'mi':'km'); if(currentUser) upsertProfile({imperial:S.imperial}); };
 
 // keyboard
 window.addEventListener('keydown',e=>{
@@ -1107,6 +1131,7 @@ window.addEventListener('keydown',e=>{
   }
   if(e.key==='Escape'){
     if($('authOverlay').classList.contains('show')) return;
+    if($('pilotModal').classList.contains('show')){ closePilot(); return; }
     if($('settingsModal').classList.contains('show')){ closeSettings(); return; }
     if($('historyModal').classList.contains('show')){ closeHistory(); return; }
     if(S.mode==='ride') endRide();
@@ -1114,27 +1139,14 @@ window.addEventListener('keydown',e=>{
   if(e.code==='Space'&&S.mode==='title'&&!$('authOverlay').classList.contains('show')) startRide(true);
 });
 
-// ── Boot: check existing session ─────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────────────────────
 (async ()=>{
-  const { data:{ session } } = await sb.auth.getSession();
-  if(session){
-    currentUser = session.user;
-    await onLogin();
-  } else {
-    showAuth();
-    updateUserUI(null);
-  }
-
-  // listen for auth changes (e.g. email confirm tab)
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if(event==='SIGNED_IN' && session){
-      currentUser = session.user;
-      hideAuth();
-      await onLogin();
-    } else if(event==='SIGNED_OUT'){
-      currentUser = null;
-      updateUserUI(null);
-    }
+  const { data:{ session } }=await sb.auth.getSession();
+  if(session){ currentUser=session.user; await onLogin(); }
+  else{ showAuth(); updateUserUI(null); }
+  sb.auth.onAuthStateChange(async (event,session)=>{
+    if(event==='SIGNED_IN'&&session){ currentUser=session.user; hideAuth(); await onLogin(); }
+    else if(event==='SIGNED_OUT'){ currentUser=null; updateUserUI(null); }
   });
 })();
 </script>
