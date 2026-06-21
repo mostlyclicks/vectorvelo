@@ -183,16 +183,16 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
 .rs-sub{ font-size:8px; letter-spacing:.32em; color:rgba(39,232,255,.35); text-align:center; margin-bottom:22px; }
 
 /* profile cards grid */
-.rs-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:20px; }
+.rs-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:20px; }
 .rs-card{
   border:1.5px solid rgba(255,255,255,.1); padding:10px 6px 8px;
   cursor:pointer; text-align:center; transition:all .15s; position:relative; overflow:hidden;
 }
 .rs-card:hover{ border-color:rgba(255,255,255,.4); filter:brightness(1.2); }
 .rs-card.selected{ box-shadow:0 0 20px currentColor; }
-.rs-card-icon{ font-size:22px; margin-bottom:5px; display:block; }
-.rs-card-name{ font-size:8px; letter-spacing:.22em; display:block; margin-bottom:3px; }
-.rs-card-sub{ font-size:7px; letter-spacing:.15em; opacity:.45; display:block; }
+.rs-card-icon{ font-size:22px; margin-bottom:5px; display:block; pointer-events:none; }
+.rs-card-name{ font-size:8px; letter-spacing:.22em; display:block; margin-bottom:3px; pointer-events:none; }
+.rs-card-sub{ font-size:7px; letter-spacing:.15em; opacity:.45; display:block; pointer-events:none; }
 /* per-type colours set via inline style on each card */
 
 /* terrain preview strip */
@@ -285,6 +285,13 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
     <div class="rs-preview">
       <div class="rs-preview-label" id="rsPreviewLabel">TERRAIN PREVIEW</div>
       <canvas id="rsPreviewCanvas"></canvas>
+    </div>
+    <div id="rsErgRow" style="display:none;align-items:center;gap:12px;margin-bottom:14px;font-size:10px;letter-spacing:.25em;color:#b47fff;">
+      <span>TARGET WATTS</span>
+      <input type="number" id="rsErgWatts" min="50" max="600" value="150"
+        style="flex:1;background:rgba(180,127,255,.06);border:1px solid rgba(180,127,255,.3);
+        color:#b47fff;font-family:inherit;font-size:14px;padding:6px 10px;outline:none;letter-spacing:.08em;">
+      <span id="rsErgPct" style="opacity:.5;font-size:9px;width:60px;text-align:right"></span>
     </div>
     <div class="rs-launch">
       <button class="v c" id="rsLaunchDemo">▶ LAUNCH DEMO</button>
@@ -459,6 +466,22 @@ const PROFILES = [
     spikeChance:0.0,
     desc:'Maximum singularity. Long brutal climbs. No escape.',
   },
+  {
+    id:'ground_control',
+    name:'GROUND CONTROL',
+    sub:'ERG MODE · STEADY ORBIT',
+    icon:'🛸',
+    color:'#b47fff',          // purple
+    roadColor:'#b47fff',
+    rockColor:'rgba(180,127,255,0.35)',
+    waveFreqMin:0.0, waveFreqMax:0.0,  // no wave — flat ERG
+    waveAmpScale:0.0,
+    layers:0,
+    baseFrac:0.70,            // default 70% FTP, user sets target
+    spikeChance:0.0,
+    isErg:true,               // flag: use fixed ERG target
+    desc:'Steady-state ERG. You set the watts. Houston stays in control.',
+  },
 ];
 
 // ── Waveform Engine ───────────────────────────────────────────────────────────
@@ -469,6 +492,10 @@ function rngNext(){ RNG_STATE=(RNG_STATE*1664525+1013904223)&0xffffffff; return 
 function seedRng(){ RNG_STATE=Math.floor(Math.random()*0xffffffff); }
 
 function buildWaveform(profile, ftp, difficulty){
+  // ERG / Ground Control: flat target, no waveform
+  if(profile.isErg){
+    return { baseW:S.ergTarget, layers:[], spikeFreq:0, spikeAmp:0, spikePhase:0, isErg:true };
+  }
   // difficulty 1-10 → scale amplitude and raise base
   const dScale = 0.6 + (difficulty-1)/9 * 0.8;  // 0.6–1.4
   const baseW  = ftp * profile.baseFrac * (0.7 + (difficulty-1)/9 * 0.6);
@@ -516,6 +543,7 @@ const S={
   imperial:(localStorage.getItem('vv_units')?? 'mi')==='mi',
   difficulty:+(localStorage.getItem('vv_diff')||5),
   z1:115, z2:152, z3:162, z4:174, ftp:200,
+  ergTarget:150,   // Ground Control target watts
   pilotName:'', age:0, weightKg:0,
   best:+(localStorage.getItem('vv_best_m')||0),
   // active ride profile
@@ -589,46 +617,61 @@ function selectProfile(p){
   highlightCard(p);
   $('rsPreviewLabel').textContent=p.name+' · '+p.sub;
   $('rsPreviewLabel').style.color=p.color;
+  // show ERG target row only for Ground Control
+  const isErg=!!p.isErg;
+  $('rsErgRow').style.display=isErg?'flex':'none';
+  if(isErg) updateErgPct();
   // only draw canvas when modal is visible (has real dimensions)
   if($('rideSelectModal').classList.contains('show')) drawPreviewWaveform(p);
+}
+function updateErgPct(){
+  const w=+$('rsErgWatts').value||0;
+  S.ergTarget=w;
+  $('rsErgPct').textContent=S.ftp>0?Math.round(w/S.ftp*100)+'% FTP':'';
 }
 
 function drawPreviewWaveform(p){
   const canvas=$('rsPreviewCanvas');
-  // use parent width if canvas hasn't been laid out yet
   const pw=canvas.offsetWidth||canvas.parentElement.offsetWidth||480;
   const ph=canvas.offsetHeight||52;
-  if(pw<4||ph<4) return;  // modal still hidden, bail
+  if(pw<4||ph<4) return;
   canvas.width=pw*2; canvas.height=ph*2;
   const ctx=canvas.getContext('2d');
   ctx.scale(2,2);
   ctx.clearRect(0,0,pw,ph);
+  ctx.strokeStyle=p.color; ctx.lineWidth=1.5;
+  ctx.shadowColor=p.color; ctx.shadowBlur=6;
 
-  // draw a sample waveform using a temp seed so preview is stable per profile
+  if(p.isErg){
+    // flat ERG line
+    const w=S.ergTarget||150;
+    const y=ph-4-(w/320)*Math.min(ph-8,36);
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(pw,y); ctx.stroke();
+    ctx.fillStyle=p.color+'18';
+    ctx.fillRect(0,y,pw,ph-y);
+    // label
+    ctx.shadowBlur=0; ctx.fillStyle=p.color; ctx.font='bold 9px monospace';
+    ctx.fillText(w+'W ERG TARGET',8,y-4);
+    return;
+  }
+
+  // procedural preview (stable seed per profile)
   const savedState=RNG_STATE;
   RNG_STATE=p.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0)*997;
   const wf=buildWaveform(p, 200, S.difficulty);
   RNG_STATE=savedState;
-
   const steps=120;
   ctx.beginPath();
   for(let i=0;i<=steps;i++){
-    const t=(i/steps)*180;  // 3 min preview window
+    const t=(i/steps)*180;
     const v=evalWaveform(wf,t);
     const x=(i/steps)*pw;
     const y=ph-4-(v/320)*Math.min(ph-8,36);
     i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   }
-  ctx.strokeStyle=p.color;
-  ctx.lineWidth=1.5;
-  ctx.shadowColor=p.color;
-  ctx.shadowBlur=6;
   ctx.stroke();
-
-  // fill under curve
   ctx.lineTo(pw,ph); ctx.lineTo(0,ph); ctx.closePath();
-  ctx.fillStyle=p.color+'18';
-  ctx.fill();
+  ctx.fillStyle=p.color+'18'; ctx.fill();
 }
 
 function openRideSelect(fromBike){
@@ -642,6 +685,10 @@ function openRideSelect(fromBike){
 function closeRideSelect(){ $('rideSelectModal').classList.remove('show'); }
 
 async function launchRide(demo){
+  // capture ERG target from input if Ground Control
+  if(selectedProfile.isErg){
+    S.ergTarget = Math.max(50, Math.min(600, +$('rsErgWatts').value||150));
+  }
   closeRideSelect();
   seedRng();
   S.profile   = selectedProfile;
@@ -1335,6 +1382,7 @@ $('rsLaunchDemo').onclick=()=>launchRide(true);
 $('rsLaunchBike').onclick=()=>launchRide(false);
 $('btnStrava').onclick = ()=>{if(S.samples.length)downloadTCX();window.open('https://www.strava.com/upload/select','_blank');};
 $('pilotAge').addEventListener('input',onAgeInput);
+$('rsErgWatts').addEventListener('input',()=>{ updateErgPct(); drawPreviewWaveform(selectedProfile); });
 [$('authEmail'),$('authPass'),$('authConfirm')].forEach(el=>{if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')doAuth();});});
 $('settingsModal').addEventListener('click',e=>{if(e.target===$('settingsModal'))closeSettings();});
 $('historyModal').addEventListener('click',e=>{if(e.target===$('historyModal'))closeHistory();});
