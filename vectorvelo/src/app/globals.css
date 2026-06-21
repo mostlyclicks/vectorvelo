@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --phos-green:  #39ff6e;
+  --phos-cyan:   #27e8ff;
+  --phos-amber:  #ffc234;
+  --phos-red:    #ff3b4e;
+  --phos-white:  #eaffe9;
+  --phos-bg:     #020403;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--phos-bg);
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  color: var(--phos-green);
+  min-height: 100vh;
+}
+
+/* Phosphor CRT text glow utility */
+.glow-green  { text-shadow: 0 0 8px #39ff6e, 0 0 20px #39ff6e44; }
+.glow-cyan   { text-shadow: 0 0 8px #27e8ff, 0 0 20px #27e8ff44; }
+.glow-amber  { text-shadow: 0 0 8px #ffc234, 0 0 20px #ffc23444; }
+.glow-red    { text-shadow: 0 0 8px #ff3b4e, 0 0 20px #ff3b4e44; }
+.glow-white  { text-shadow: 0 0 8px #eaffe9, 0 0 20px #eaffe944; }
+
+/* Vector border (single-pixel bright edge) */
+.vec-border {
+  border: 1px solid currentColor;
+  box-shadow: 0 0 8px currentColor, inset 0 0 8px rgba(255,255,255,0.04);
+}
+
+/* Scanlines overlay */
+.scanlines::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.18) 3px,
+    rgba(0,0,0,0) 4px
+  );
+  z-index: 9999;
+}
+
+/* Vec button */
+.btn-vec {
+  background: transparent;
+  border: 1.5px solid currentColor;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 10px 24px;
+  cursor: pointer;
+  box-shadow: 0 0 8px currentColor44, inset 0 0 8px rgba(255,255,255,0.04);
+  transition: all 0.1s linear;
+}
+.btn-vec:hover {
+  background: currentColor;
+  color: var(--phos-bg);
+  box-shadow: 0 0 20px currentColor;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--phos-green); opacity: 0.4; }

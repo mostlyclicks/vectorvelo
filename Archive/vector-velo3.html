@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VECTOR VELO — Arcade Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<style>
+  /* ============ PHOSPHOR CRT AESTHETIC ============ */
+  :root{
+    --phos-green:#39ff6e;
+    --phos-cyan:#27e8ff;
+    --phos-white:#eaffe9;
+    --phos-amber:#ffc234;
+    --phos-red:#ff3b4e;
+    --bg:#020403;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ width:100%; height:100%; overflow:hidden; background:var(--bg); }
+  body{ font-family:"Courier New", ui-monospace, monospace; color:var(--phos-green); }
+
+  canvas#game{ position:fixed; inset:0; width:100vw; height:100vh; display:block; cursor:crosshair; }
+
+  /* CRT overlay: scanlines + vignette + faint flicker */
+  #crt{ position:fixed; inset:0; pointer-events:none; z-index:50; }
+  #crt::before{
+    content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(to bottom,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,.22) 3px, rgba(0,0,0,0) 4px);
+    mix-blend-mode:multiply;
+  }
+  #crt::after{
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%);
+    animation:flicker 4.2s infinite steps(60);
+  }
+  @keyframes flicker{
+    0%,100%{ opacity:1 } 92%{ opacity:1 } 93%{ opacity:.86 } 94%{ opacity:1 } 97%{ opacity:.93 } 98%{ opacity:1 }
+  }
+
+  /* ============ VECTOR UI OVERLAYS ============ */
+  .panel{
+    position:fixed; left:50%; transform:translateX(-50%);
+    z-index:60; display:none; text-align:center;
+  }
+  .panel.show{ display:block; }
+  #menuPanel{ bottom:9vh; }
+  #ridePanel{ top:12px; right:12px; left:auto; transform:none; text-align:right; }
+  #endPanel{ bottom:8vh; }
+  #msgBar{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:2vh; z-index:60;
+    font-size:13px; letter-spacing:.18em; color:var(--phos-amber);
+    text-shadow:0 0 8px var(--phos-amber); display:none; max-width:90vw;
+  }
+  #msgBar.show{ display:block; }
+
+  button.vec{
+    appearance:none; background:transparent; cursor:pointer;
+    font-family:inherit; font-weight:bold;
+    font-size:15px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--phos-green); border:1.5px solid var(--phos-green);
+    padding:12px 26px; margin:7px;
+    text-shadow:0 0 7px var(--phos-green);
+    box-shadow:0 0 9px rgba(57,255,110,.45), inset 0 0 9px rgba(57,255,110,.18);
+    transition:all .12s linear;
+  }
+  button.vec:hover{
+    color:#031007; background:var(--phos-green);
+    text-shadow:none; box-shadow:0 0 22px var(--phos-green);
+  }
+  button.vec.cyan{ color:var(--phos-cyan); border-color:var(--phos-cyan);
+    text-shadow:0 0 7px var(--phos-cyan);
+    box-shadow:0 0 9px rgba(39,232,255,.45), inset 0 0 9px rgba(39,232,255,.18); }
+  button.vec.cyan:hover{ background:var(--phos-cyan); color:#021014; text-shadow:none; box-shadow:0 0 22px var(--phos-cyan); }
+  button.vec.amber{ color:var(--phos-amber); border-color:var(--phos-amber);
+    text-shadow:0 0 7px var(--phos-amber);
+    box-shadow:0 0 9px rgba(255,194,52,.4), inset 0 0 9px rgba(255,194,52,.15); }
+  button.vec.amber:hover{ background:var(--phos-amber); color:#140d02; text-shadow:none; }
+  button.vec.red{ color:var(--phos-red); border-color:var(--phos-red);
+    text-shadow:0 0 7px var(--phos-red);
+    box-shadow:0 0 9px rgba(255,59,78,.4), inset 0 0 9px rgba(255,59,78,.15); }
+  button.vec.red:hover{ background:var(--phos-red); color:#140204; text-shadow:none; }
+  button.vec.sm{ font-size:12px; padding:7px 13px; margin:4px; }
+
+  .hint{ font-size:11px; letter-spacing:.3em; opacity:.75; margin-top:10px; }
+
+  #ergBox{ margin-top:8px; display:none; }
+  #ergBox.show{ display:block; }
+  #ergVal{ display:inline-block; min-width:84px; font-size:14px; letter-spacing:.15em;
+    color:var(--phos-cyan); text-shadow:0 0 8px var(--phos-cyan); vertical-align:middle; }
+
+  /* glow slider */
+  #glowCtl{
+    position:fixed; right:14px; bottom:14px; z-index:60;
+    font-size:10px; letter-spacing:.3em; color:var(--phos-green);
+    opacity:.7; transition:opacity .15s;
+  }
+  #glowCtl:hover{ opacity:1; }
+  #glowCtl input{
+    vertical-align:middle; width:110px; margin-left:8px;
+    accent-color:var(--phos-green); background:transparent; cursor:pointer;
+  }
+  #unitBtn{
+    appearance:none; background:transparent; cursor:pointer;
+    font-family:inherit; font-weight:bold; font-size:10px; letter-spacing:.25em;
+    color:var(--phos-cyan); border:1px solid var(--phos-cyan);
+    padding:3px 9px; vertical-align:middle;
+  }
+  #unitBtn:hover{ background:var(--phos-cyan); color:#021014; }
+
+  a{ color:var(--phos-cyan); }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+<div id="crt"></div>
+
+<!-- TITLE MENU -->
+<div id="menuPanel" class="panel show">
+  <button class="vec cyan" id="btnConnect">⚡ Connect Kickr</button>
+  <button class="vec" id="btnDemo">▶ Demo Ride</button>
+  <div class="hint">WEB BLUETOOTH · CHROME / EDGE · HTTPS OR LOCALHOST</div>
+</div>
+
+<!-- IN-RIDE CONTROLS -->
+<div id="ridePanel" class="panel">
+  <button class="vec red sm" id="btnEnd">■ End Ride</button>
+  <div id="ergBox">
+    <button class="vec cyan sm" id="ergDown">−10</button>
+    <span id="ergVal">ERG OFF</span>
+    <button class="vec cyan sm" id="ergUp">+10</button>
+    <button class="vec sm" id="ergToggle">ERG</button>
+  </div>
+</div>
+
+<!-- RIDE COMPLETE -->
+<div id="endPanel" class="panel">
+  <button class="vec amber" id="btnTcx">⬇ Save .TCX</button>
+  <button class="vec cyan" id="btnStrava">⬆ Upload to Strava</button>
+  <button class="vec" id="btnAgain">↻ New Ride</button>
+  <div class="hint">SAVE TCX FIRST · STRAVA OPENS UPLOAD PAGE · PICK THE FILE</div>
+</div>
+
+<div id="msgBar"></div>
+
+<div id="glowCtl"><button id="unitBtn">MI</button>&nbsp;&nbsp;GLOW<input type="range" id="glowSlider" min="0" max="200" value="100"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   VECTOR VELO — 1980s vector-arcade indoor cycling trainer
+   Live Wahoo KICKR data via Web Bluetooth (FTMS / Cycling Power)
+   Ride export as TCX for Strava upload
+   ===================================================================== */
+
+const cv = document.getElementById('game');
+const cx = cv.getContext('2d');
+let W=0, H=0, DPR=1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W*DPR; cv.height = H*DPR;
+  cx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', resize); resize();
+
+const COL = {
+  green:'#39ff6e', cyan:'#27e8ff', white:'#eaffe9',
+  amber:'#ffc234', red:'#ff3b4e', dim:'rgba(57,255,110,0.35)'
+};
+
+/* ---------------- Game / ride state ---------------- */
+const G = {
+  mode:'title',            // title | ride | done
+  t:0, last:performance.now(),
+  // live telemetry
+  power:0, cadence:0, speedKmh:0, hr:0,
+  smoothPower:0, smoothCad:0, smoothSpeed:0,
+  // ride totals
+  startTime:null, elapsed:0, distM:0, kJ:0,
+  maxPower:0, avgPower:0, _pSum:0, _pN:0,
+  samples:[],              // recorded once per second
+  _lastSample:0,
+  // device
+  ble:{ device:null, mode:null, control:null, lastCrank:null },
+  deviceDistBase:null, deviceDistLast:null,
+  // demo
+  demo:false, demoEffort:185,
+  // erg
+  erg:false, ergWatts:150,
+  // fx
+  shake:0, wave:1, waveFlash:0,
+  imperial: (localStorage.getItem('vv_units') ?? 'mi') === 'mi',
+  best: +(localStorage.getItem('vv_best_m')||0)
+};
+
+/* ---------------- helpers ---------------- */
+const $ = id => document.getElementById(id);
+const fmtTime = s => {
+  s = Math.floor(s);
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60;
+  return (h? h+':' : '') + String(m).padStart(h?2:1,'0') + ':' + String(x).padStart(2,'0');
+};
+function msg(text, ms=4200){
+  const el = $('msgBar');
+  el.textContent = text; el.classList.add('show');
+  clearTimeout(msg._t);
+  if (ms) msg._t = setTimeout(()=>el.classList.remove('show'), ms);
+}
+function show(id,on){ $(id).classList.toggle('show', !!on); }
+
+/* =====================================================================
+   BLUETOOTH — Wahoo KICKR (FTMS preferred, Cycling Power fallback)
+   ===================================================================== */
+const FTMS  = 0x1826, INDOOR_BIKE = 0x2AD2, FTMS_CP = 0x2AD9;
+const CPS   = 0x1818, CP_MEAS = 0x2A63;
+const HRS   = 0x180D, HR_MEAS = 0x2A37;
+
+async function connectBike(){
+  if (!navigator.bluetooth){
+    msg('NO WEB BLUETOOTH — USE CHROME/EDGE ON HTTPS OR LOCALHOST', 8000);
+    return;
+  }
+  try{
+    msg('SCANNING…', 0);
+    const device = await navigator.bluetooth.requestDevice({
+      filters:[ {services:[FTMS]}, {services:[CPS]}, {namePrefix:'KICKR'}, {namePrefix:'Wahoo'} ],
+      optionalServices:[FTMS, CPS, HRS]
+    });
+    G.ble.device = device;
+    device.addEventListener('gattserverdisconnected', ()=> msg('DEVICE DISCONNECTED', 6000));
+    const server = await device.gatt.connect();
+
+    // --- FTMS path ---
+    try{
+      const svc = await server.getPrimaryService(FTMS);
+      const ibd = await svc.getCharacteristic(INDOOR_BIKE);
+      await ibd.startNotifications();
+      ibd.addEventListener('characteristicvaluechanged', e => parseIndoorBike(e.target.value));
+      G.ble.mode = 'ftms';
+      // control point for ERG (optional)
+      try{
+        const ctl = await svc.getCharacteristic(FTMS_CP);
+        await ctl.startNotifications();
+        await ctl.writeValue(Uint8Array.of(0x00));     // Request Control
+        G.ble.control = ctl;
+        show('ergBox', true);
+      }catch(_){ /* no control — fine */ }
+    }catch(_){
+      // --- Cycling Power fallback ---
+      const svc = await server.getPrimaryService(CPS);
+      const cpm = await svc.getCharacteristic(CP_MEAS);
+      await cpm.startNotifications();
+      cpm.addEventListener('characteristicvaluechanged', e => parseCyclingPower(e.target.value));
+      G.ble.mode = 'cps';
+    }
+
+    // --- optional heart rate from same device ---
+    try{
+      const hsvc = await server.getPrimaryService(HRS);
+      const hch  = await hsvc.getCharacteristic(HR_MEAS);
+      await hch.startNotifications();
+      hch.addEventListener('characteristicvaluechanged', e => {
+        const dv = e.target.value;
+        G.hr = (dv.getUint8(0) & 1) ? dv.getUint16(1,true) : dv.getUint8(1);
+      });
+    }catch(_){}
+
+    msg('LINKED: ' + (device.name||'TRAINER') + ' [' + G.ble.mode.toUpperCase() + ']', 5000);
+    startRide(false);
+  }catch(err){
+    if (err && err.name === 'NotFoundError') msg('SCAN CANCELLED', 3000);
+    else msg('BLUETOOTH ERROR: ' + (err.message||err), 8000);
+  }
+}
+
+/* FTMS Indoor Bike Data (0x2AD2) — little-endian, flag-gated fields */
+function parseIndoorBike(dv){
+  let o = 0;
+  const f = dv.getUint16(o, true); o += 2;
+  if (!(f & 0x0001)){ G.speedKmh = dv.getUint16(o,true)/100; o += 2; }   // inst speed
+  if (f & 0x0002) o += 2;                                                // avg speed
+  if (f & 0x0004){ G.cadence = dv.getUint16(o,true)/2; o += 2; }         // inst cadence
+  if (f & 0x0008) o += 2;                                                // avg cadence
+  if (f & 0x0010){                                                       // total distance uint24
+    const d = dv.getUint16(o,true) + (dv.getUint8(o+2)<<16); o += 3;
+    if (G.deviceDistBase === null) G.deviceDistBase = d;
+    G.deviceDistLast = d;
+  }
+  if (f & 0x0020) o += 2;                                                // resistance
+  if (f & 0x0040){ G.power = Math.max(0, dv.getInt16(o,true)); o += 2; } // inst power
+  if (f & 0x0080) o += 2;                                                // avg power
+  if (f & 0x0100) o += 5;                                                // energy (3 fields)
+  if (f & 0x0200){ G.hr = dv.getUint8(o); o += 1; }                      // heart rate
+}
+
+/* Cycling Power Measurement (0x2A63) — power + cadence from crank revs */
+function parseCyclingPower(dv){
+  const f = dv.getUint16(0, true);
+  G.power = Math.max(0, dv.getInt16(2, true));
+  let o = 4;
+  if (f & 0x0001) o += 1;          // pedal balance
+  if (f & 0x0004) o += 2;          // accumulated torque
+  if (f & 0x0010) o += 6;          // wheel rev data
+  if (f & 0x0020){                 // crank rev data -> cadence
+    const revs = dv.getUint16(o, true), t = dv.getUint16(o+2, true);
+    const prev = G.ble.lastCrank;
+    if (prev){
+      let dr = (revs - prev.revs + 65536) % 65536;
+      let dt = (t - prev.t + 65536) % 65536;     // 1/1024 s
+      if (dt > 0 && dr > 0) G.cadence = dr / (dt/1024) * 60;
+    }
+    G.ble.lastCrank = { revs, t };
+  }
+  // no speed in CPS — estimate from power (flat-road model)
+  G.speedKmh = powerToSpeed(G.power);
+}
+
+/* simple flat-road physics: P ≈ 0.19·v³ (v in m/s) */
+function powerToSpeed(p){ return p<=0 ? 0 : 3.6 * Math.cbrt(p/0.19); }
+
+/* ---------------- ERG control (FTMS) ---------------- */
+async function sendErg(watts){
+  if (!G.ble.control) return;
+  try{
+    const b = new Uint8Array(3);
+    b[0] = 0x05; b[1] = watts & 0xff; b[2] = (watts>>8) & 0xff;  // Set Target Power
+    await G.ble.control.writeValue(b);
+  }catch(e){ msg('ERG WRITE FAILED', 3000); }
+}
+async function ergOff(){
+  if (!G.ble.control) return;
+  try{ await G.ble.control.writeValue(Uint8Array.of(0x01)); }catch(_){}
+}
+function refreshErgLabel(){
+  $('ergVal').textContent = G.erg ? ('ERG ' + G.ergWatts + 'W') : 'ERG OFF';
+}
+
+/* =====================================================================
+   RIDE LIFECYCLE + RECORDING + TCX EXPORT
+   ===================================================================== */
+function startRide(demo){
+  Object.assign(G, {
+    mode:'ride', demo, startTime:new Date(), elapsed:0, distM:0, kJ:0,
+    maxPower:0, avgPower:0, _pSum:0, _pN:0, samples:[], _lastSample:0,
+    deviceDistBase:null, deviceDistLast:null, wave:1, waveFlash:0,
+    power:0, cadence:0, speedKmh:0, hr:0,
+    smoothPower:0, smoothCad:0, smoothSpeed:0
+  });
+  show('menuPanel', false); show('endPanel', false); show('ridePanel', true);
+  if (demo){ show('ergBox', false); msg('DEMO MODE — ↑/↓ ARROWS CHANGE EFFORT', 6000); }
+}
+
+function endRide(){
+  G.mode = 'done';
+  show('ridePanel', false); show('endPanel', true);
+  if (G.distM > G.best){
+    G.best = G.distM;
+    localStorage.setItem('vv_best_m', String(Math.round(G.distM)));
+    msg('★ NEW HIGH SCORE — DISTANCE RECORD ★', 6000);
+  }
+  if (G.ble.device && G.ble.device.gatt.connected){
+    try{ ergOff(); }catch(_){}
+  }
+}
+
+function resetToTitle(){
+  G.mode = 'title';
+  show('endPanel', false); show('ridePanel', false); show('menuPanel', true);
+}
+
+/* one telemetry sample per second while riding */
+function recordSample(){
+  G.samples.push({
+    t: new Date().toISOString(),
+    distM: G.distM, power: Math.round(G.power),
+    cad: Math.round(G.cadence), speedMs: G.speedKmh/3.6,
+    hr: G.hr ? Math.round(G.hr) : null
+  });
+}
+
+/* ---------------- TCX (Strava-compatible virtual ride) ---------------- */
+function buildTCX(){
+  const start = (G.samples[0] ? G.samples[0].t : G.startTime.toISOString());
+  const pts = G.samples.map(s => `
+      <Trackpoint>
+        <Time>${s.t}</Time>
+        <DistanceMeters>${s.distM.toFixed(1)}</DistanceMeters>
+        <Cadence>${s.cad}</Cadence>${s.hr ? `
+        <HeartRateBpm><Value>${s.hr}</Value></HeartRateBpm>` : ''}
+        <Extensions>
+          <ns3:TPX>
+            <ns3:Speed>${s.speedMs.toFixed(2)}</ns3:Speed>
+            <ns3:Watts>${s.power}</ns3:Watts>
+          </ns3:TPX>
+        </Extensions>
+      </Trackpoint>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+  xmlns:ns3="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+  <Activities>
+    <Activity Sport="Biking">
+      <Id>${start}</Id>
+      <Lap StartTime="${start}">
+        <TotalTimeSeconds>${G.elapsed.toFixed(0)}</TotalTimeSeconds>
+        <DistanceMeters>${G.distM.toFixed(1)}</DistanceMeters>
+        <Calories>${Math.round(G.kJ * 0.239)}</Calories>
+        <Intensity>Active</Intensity>
+        <TriggerMethod>Manual</TriggerMethod>
+        <Track>${pts}
+        </Track>
+        <Extensions>
+          <ns3:LX>
+            <ns3:AvgWatts>${Math.round(G.avgPower)}</ns3:AvgWatts>
+            <ns3:MaxWatts>${Math.round(G.maxPower)}</ns3:MaxWatts>
+          </ns3:LX>
+        </Extensions>
+      </Lap>
+      <Notes>VECTOR VELO arcade trainer ride</Notes>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>`;
+}
+
+function downloadTCX(){
+  if (!G.samples.length){ msg('NO RIDE DATA RECORDED', 4000); return; }
+  const blob = new Blob([buildTCX()], { type:'application/vnd.garmin.tcx+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const d = G.startTime || new Date();
+  a.download = 'vector-velo-' + d.toISOString().slice(0,16).replace(/[:T]/g,'-') + '.tcx';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  msg('TCX SAVED — UPLOAD IT AT STRAVA.COM/UPLOAD', 6000);
+}
+
+/* =====================================================================
+   DEMO PHYSICS
+   ===================================================================== */
+function demoTick(dt){
+  const wobble = Math.sin(G.t*0.7)*22 + Math.sin(G.t*2.3)*9 + (Math.random()-0.5)*14;
+  G.power   = Math.max(0, G.demoEffort + wobble);
+  G.cadence = G.power < 5 ? 0 : 82 + Math.sin(G.t*0.5)*6 + (Math.random()-0.5)*3;
+  G.speedKmh = powerToSpeed(G.power);
+  G.hr = Math.round(95 + Math.min(85, G.power*0.32) + Math.sin(G.t*0.2)*4);
+}
+
+/* =====================================================================
+   MAIN UPDATE
+   ===================================================================== */
+function update(dt){
+  G.t += dt;
+  if (G.mode !== 'ride') return;
+
+  if (G.demo) demoTick(dt);
+
+  // smoothing for visuals
+  const k = 1 - Math.pow(0.001, dt);
+  G.smoothPower += (G.power - G.smoothPower)*k;
+  G.smoothCad   += (G.cadence - G.smoothCad)*k;
+  G.smoothSpeed += (G.speedKmh - G.smoothSpeed)*k;
+
+  G.elapsed += dt;
+  G.kJ += G.power * dt / 1000;
+  if (G.power > G.maxPower) G.maxPower = G.power;
+  if (G.power > 0){ G._pSum += G.power*dt; G._pN += dt; G.avgPower = G._pSum/Math.max(1e-6,G._pN); }
+
+  // distance: prefer device odometer, else integrate speed
+  if (G.deviceDistBase !== null && G.deviceDistLast !== null){
+    G.distM = G.deviceDistLast - G.deviceDistBase;
+  } else {
+    G.distM += (G.speedKmh/3.6) * dt;
+  }
+
+  // wave = 1 per 5 km, Tempest style
+  const w = Math.floor(G.distM/5000) + 1;
+  if (w !== G.wave){ G.wave = w; G.waveFlash = 3; G.shake = 0.6; }
+  if (G.waveFlash > 0) G.waveFlash -= dt;
+  if (G.shake > 0) G.shake -= dt*2;
+
+  // 1 Hz recording
+  if (G.elapsed - G._lastSample >= 1){
+    G._lastSample = G.elapsed;
+    recordSample();
+  }
+}
+
+/* =====================================================================
+   VECTOR RENDERER — glowing strokes only, Asteroids/Tempest style
+   ===================================================================== */
+G.glow = +(localStorage.getItem('vv_glow') ?? 1);   // 0..2 multiplier
+
+function glow(color, blur=12, width=1.6){
+  cx.strokeStyle = color; cx.lineWidth = width;
+  cx.shadowColor = color; cx.shadowBlur = blur * G.glow;
+  cx.lineJoin = 'round'; cx.lineCap = 'round';
+}
+function noGlow(){ cx.shadowBlur = 0; }
+
+function vecText(str, x, y, size, color, align='left', blur=10, weight=null){
+  cx.save();
+  cx.font = `bold ${size}px "Courier New", monospace`;
+  cx.textAlign = 'left'; cx.textBaseline = 'alphabetic';
+  cx.lineWidth = weight ?? Math.max(0.8, size/22);
+  cx.strokeStyle = color; cx.shadowColor = color; cx.shadowBlur = blur * G.glow;
+  const ls = size*0.18;
+  if (align !== 'left'){
+    let total = 0;
+    for (const ch of str) total += cx.measureText(ch).width + ls;
+    total -= ls;
+    x -= (align === 'center') ? total/2 : total;   // center or right
+  }
+  for (const ch of str){
+    cx.strokeText(ch, x, y);
+    x += cx.measureText(ch).width + ls;
+  }
+  cx.restore();
+}
+
+/* ---------- starfield ---------- */
+const stars = Array.from({length:90}, ()=>({ x:Math.random(), y:Math.random()*0.55, s:Math.random() }));
+function drawStars(horizonY){
+  noGlow();
+  for (const st of stars){
+    const tw = 0.4 + 0.6*Math.abs(Math.sin(G.t*1.5 + st.s*20));
+    cx.fillStyle = `rgba(234,255,233,${0.25 + st.s*0.5*tw})`;
+    cx.fillRect(st.x*W, st.y*horizonY, st.s>0.8?2:1, st.s>0.8?2:1);
+  }
+}
+
+/* ---------- asteroids ---------- */
+function makeRock(){
+  const n = 8 + (Math.random()*4|0);
+  const verts = [];
+  for (let i=0;i<n;i++){
+    const a = i/n*Math.PI*2;
+    const r = 0.6 + Math.random()*0.45;
+    verts.push([Math.cos(a)*r, Math.sin(a)*r]);
+  }
+  return {
+    verts, x:Math.random()*1.2-0.1, y:Math.random()*0.4+0.03,
+    r:14+Math.random()*26, rot:Math.random()*Math.PI*2,
+    vr:(Math.random()-0.5)*0.8, vx:(Math.random()*0.5+0.1)*(Math.random()<0.5?-1:1)
+  };
+}
+const rocks = Array.from({length:7}, makeRock);
+function drawRocks(horizonY, dt){
+  glow(COL.dim, 6, 1.2);
+  for (const r of rocks){
+    r.rot += r.vr*dt;
+    r.x += r.vx*dt*0.04*(1 + G.smoothSpeed/40);
+    if (r.x < -0.15) r.x = 1.15; if (r.x > 1.15) r.x = -0.15;
+    cx.save();
+    cx.translate(r.x*W, r.y*horizonY + horizonY*0.2);
+    cx.rotate(r.rot);
+    cx.beginPath();
+    r.verts.forEach(([vx,vy],i)=> i? cx.lineTo(vx*r.r, vy*r.r) : cx.moveTo(vx*r.r, vy*r.r));
+    cx.closePath(); cx.stroke();
+    cx.restore();
+  }
+}
+
+/* ---------- horizon mountains ---------- */
+function drawMountains(horizonY){
+  glow('rgba(39,232,255,0.5)', 8, 1.3);
+  cx.beginPath();
+  const seg = 26, amp = H*0.05;
+  for (let i=0;i<=seg;i++){
+    const x = i/seg*W;
+    const ph = i*1.7 + Math.floor(G.distM/40)*0.013; // creeps with distance
+    const y = horizonY - Math.abs(Math.sin(ph)*Math.cos(ph*0.37))*amp - 2;
+    i? cx.lineTo(x,y) : cx.moveTo(x,y);
+  }
+  cx.stroke();
+}
+
+/* ---------- Tempest road: perspective lanes + rushing rungs ---------- */
+let roadScroll = 0;
+function drawRoad(horizonY, dt){
+  const vp = { x: W/2 + Math.sin(G.distM/900)*W*0.06, y: horizonY };
+  const bottomHalf = W*0.62;
+  const LANES = 8;
+
+  // lane rails — Tempest web
+  glow(COL.cyan, 14, 1.8);
+  for (let i=0;i<=LANES;i++){
+    const u = i/LANES*2 - 1;
+    cx.beginPath();
+    cx.moveTo(vp.x + u*W*0.012, vp.y);
+    cx.lineTo(W/2 + u*bottomHalf, H + 8);
+    cx.stroke();
+  }
+
+  // rungs flying at the rider — speed-driven
+  roadScroll = (roadScroll + (G.smoothSpeed/3.6) * dt * 0.06) % 1;
+  glow(COL.green, 12, 1.6);
+  const RUNGS = 11;
+  for (let i=0;i<RUNGS;i++){
+    let z = ((i/RUNGS) + roadScroll) % 1;       // 0 = horizon, 1 = feet
+    const p = Math.pow(z, 3.1);
+    const y = vp.y + (H + 8 - vp.y)*p;
+    const half = W*0.012 + (bottomHalf - W*0.012)*p;
+    const xC = vp.x + (W/2 - vp.x)*p;
+    cx.globalAlpha = 0.25 + 0.75*p;
+    cx.beginPath();
+    cx.moveTo(xC - half, y);
+    cx.lineTo(xC + half, y);
+    cx.stroke();
+  }
+  cx.globalAlpha = 1;
+}
+
+/* ---------- wireframe bike ---------- */
+let crank = 0;
+function drawBike(dt){
+  crank += (G.smoothCad/60) * Math.PI*2 * dt;
+  const bob = Math.sin(crank)* (2 + G.smoothPower/120);
+  const x0 = W/2, y0 = H*0.86 + bob;
+  const R = Math.min(W,H) * 0.045;               // wheel radius
+  const wb = R*2.4;          // wheelbase
+
+  cx.save();
+  cx.translate(x0, y0);
+  const c = G.smoothPower > 0.9*Math.max(1,G.avgPower)*1.4 ? COL.white : COL.green;
+  glow(c, 16, 2);
+
+  function wheel(wx){
+    cx.beginPath(); cx.arc(wx, 0, R, 0, Math.PI*2); cx.stroke();
+    for (let i=0;i<5;i++){
+      const a = crank*(wx<0?1:1) + i*Math.PI*2/5;
+      cx.beginPath();
+      cx.moveTo(wx,0);
+      cx.lineTo(wx + Math.cos(a)*R*0.92, Math.sin(a)*R*0.92);
+      cx.stroke();
+    }
+  }
+  wheel(-wb/2); wheel(wb/2);
+
+  // frame
+  const bbx = -wb*0.08, bby = 0;                 // bottom bracket
+  const stx = -wb*0.16, sty = -R*1.45;           // saddle
+  const hbx =  wb*0.34, hby = -R*1.5;            // bars
+  cx.beginPath();
+  cx.moveTo(-wb/2, 0); cx.lineTo(stx, sty);      // seat stay+tube
+  cx.lineTo(bbx, bby); cx.lineTo(-wb/2, 0);      // chainstay
+  cx.moveTo(stx, sty); cx.lineTo(hbx, hby);      // top tube
+  cx.lineTo(bbx, bby);                           // down tube
+  cx.moveTo(hbx, hby); cx.lineTo(wb/2, 0);       // fork
+  cx.moveTo(stx-9, sty); cx.lineTo(stx+9, sty);  // saddle
+  cx.moveTo(hbx, hby); cx.lineTo(hbx+12, hby-6); // bars
+  cx.stroke();
+
+  // crank + pedals
+  const px = Math.cos(crank)*R*0.45, py = Math.sin(crank)*R*0.45;
+  cx.beginPath();
+  cx.moveTo(bbx+px, bby+py); cx.lineTo(bbx-px, bby-py);
+  cx.stroke();
+
+  // thrust flames when hammering
+  if (G.smoothPower > 240){
+    glow(COL.amber, 14, 1.6);
+    const f = 8 + (G.smoothPower-240)/14 + Math.random()*8;
+    cx.beginPath();
+    cx.moveTo(-wb/2 - R, -4); cx.lineTo(-wb/2 - R - f, 0); cx.lineTo(-wb/2 - R, 4);
+    cx.stroke();
+  }
+  cx.restore();
+}
+
+/* ---------- HUD ---------- */
+function bar(x, y, w, h, frac, color, segs=20){
+  glow(color, 8, 1.3);
+  cx.strokeRect(x, y, w, h);
+  noGlow();
+  const lit = Math.round(frac*segs);
+  for (let i=0;i<segs;i++){
+    const sx = x + 3 + i*(w-6)/segs;
+    cx.fillStyle = i<lit ? color : 'rgba(255,255,255,0.07)';
+    cx.fillRect(sx, y+3, (w-6)/segs - 2, h-6);
+  }
+}
+
+/* ---------- giant block-outline stat text (Anton) ---------- */
+function bigStat(text, x, y, size, color, maxW, align='left'){
+  cx.save();
+  cx.font = `${size}px Anton, "Arial Black", Impact, sans-serif`;
+  let w = cx.measureText(text).width;
+  if (maxW && w > maxW){
+    size *= maxW / w;
+    cx.font = `${size}px Anton, "Arial Black", Impact, sans-serif`;
+    w = cx.measureText(text).width;
+  }
+  if (align === 'right') x -= w;
+  cx.textAlign = 'left'; cx.textBaseline = 'alphabetic';
+  cx.lineWidth = Math.max(1.4, size/28);
+  cx.strokeStyle = color;
+  cx.shadowColor = color; cx.shadowBlur = 3 * G.glow;
+  cx.strokeText(text, x, y);
+  cx.restore();
+}
+
+function drawHUD(){
+  const m = Math.round(W*0.02);
+  const col = W/3 - m;                     // left-third budget
+
+  /* ===== BIG LEFT STACK — block outline numerals ===== */
+  const mph  = G.imperial ? G.smoothSpeed*0.621371 : G.smoothSpeed;
+  const dist = G.imperial ? G.distM/1609.344 : G.distM/1000;
+  const rows = [
+    Math.round(G.power) + ' W',
+    Math.round(mph) + (G.imperial ? ' MPH' : ' KMH'),
+    dist.toFixed(1) + (G.imperial ? ' MI' : ' KM'),
+    Math.round(G.cadence) + ' RPM'
+  ];
+  if (G.hr) rows.push(Math.round(G.hr) + ' BPM');
+
+  const rowH = Math.min(H*0.92/rows.length, H*0.175);
+  let y = m + rowH*0.82;
+  for (const txt of rows){
+    bigStat(txt, m, y, rowH*1.04, COL.cyan, col);
+    y += rowH;
+  }
+
+  /* ===== LOWER-RIGHT SESSION BLOCK — half-size, above controls ===== */
+  const rRow = rowH * 0.5;
+  const rRows = [
+    ['TIME ' + fmtTime(G.elapsed), COL.white],
+    ['AVG ' + Math.round(G.avgPower) + ' W', COL.green],
+    ['SCORE ' + String(Math.round(G.kJ)).padStart(6,'0'), COL.amber]
+  ];
+  let ry = H - 64 - rRow*(rRows.length - 1);   // bottom row sits above glow/unit controls
+  for (const [txt, c] of rRows){
+    bigStat(txt, W - m, ry, rRow*1.0, c, col, 'right');
+    ry += rRow;
+  }
+
+  // wave banner
+  vecText('WAVE ' + G.wave, W/2, 40, 16, COL.cyan, 'center', 6);
+  if (G.waveFlash > 0 && Math.sin(G.t*16) > 0)
+    vecText('WAVE ' + G.wave + ' — SPEED BONUS', W/2, H*0.3, 26, COL.amber, 'center', 14);
+
+  if (G.demo) vecText('DEMO', W/2, H-14, 11, COL.dim, 'center', 4);
+}
+
+/* ---------- screens ---------- */
+function drawTitle(){
+  const horizonY = H*0.46;
+  drawStars(horizonY); drawRocks(horizonY, 1/60);
+  drawMountains(horizonY); drawRoad(horizonY, 1/60);
+  G.smoothSpeed = 24; // attract-mode cruise
+
+  vecText('VECTOR', W/2, H*0.24, Math.min(82, W/9), COL.green, 'center', 22);
+  vecText('VELO',   W/2, H*0.24 + Math.min(96, W/8), Math.min(82, W/9), COL.cyan, 'center', 22);
+  if (Math.sin(G.t*3.2) > -0.25)
+    vecText('INSERT WATTS TO PLAY', W/2, H*0.6, 17, COL.amber, 'center');
+  if (G.best > 0)
+    vecText('HIGH SCORE ' + (G.imperial ? (G.best/1609.344).toFixed(2)+' MI' : (G.best/1000).toFixed(2)+' KM'),
+            W/2, H*0.66, 13, COL.dim, 'center');
+  vecText('© 2026 MOSTLY CLICKS AMUSEMENTS', W/2, H-46, 10, COL.dim, 'center');
+}
+
+function drawDone(){
+  const horizonY = H*0.46;
+  drawStars(horizonY); drawMountains(horizonY);
+  vecText('RIDE COMPLETE', W/2, H*0.2, Math.min(46, W/14), COL.amber, 'center', 20);
+
+  const uDist = G.imperial ? (G.distM/1609.344).toFixed(2)+' MI' : (G.distM/1000).toFixed(2)+' KM';
+  const rows = [
+    ['TIME',  fmtTime(G.elapsed)],
+    ['DIST',  uDist],
+    ['AVG PWR', Math.round(G.avgPower) + ' W'],
+    ['MAX PWR', Math.round(G.maxPower) + ' W'],
+    ['ENERGY',  Math.round(G.kJ) + ' KJ'],
+    ['SCORE',   String(Math.round(G.kJ)).padStart(6,'0')]
+  ];
+  let y = H*0.32;
+  for (const [k,v] of rows){
+    vecText(k, W/2 - 36, y, 17, COL.dim, 'right', 5);
+    vecText(v, W/2 + 36, y, 17, COL.green, 'left', 6);
+    y += 38;
+  }
+  if (Math.sin(G.t*3) > 0)
+    vecText('TRANSMIT TO STRAVA HQ ▼', W/2, y + 26, 13, COL.cyan, 'center');
+}
+
+function drawRide(dt){
+  const horizonY = H*0.42;
+  if (G.shake > 0) cx.translate((Math.random()-0.5)*6*G.shake, (Math.random()-0.5)*6*G.shake);
+  drawStars(horizonY);
+  drawRocks(horizonY, dt);
+  drawMountains(horizonY);
+  drawRoad(horizonY, dt);
+  drawBike(dt);
+  drawHUD();
+}
+
+/* ---------- main loop ---------- */
+function frame(now){
+  const dt = Math.min(0.05, (now - G.last)/1000); G.last = now;
+  update(dt);
+
+  cx.save();
+  cx.fillStyle = 'rgba(2,4,3,0.55)';   // phosphor persistence
+  cx.fillRect(0,0,W,H);
+  if (G.mode === 'title') drawTitle();
+  else if (G.mode === 'ride') drawRide(dt);
+  else drawDone();
+  cx.restore();
+  noGlow();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* =====================================================================
+   INPUT WIRING
+   ===================================================================== */
+$('btnConnect').onclick = connectBike;
+$('btnDemo').onclick = ()=> startRide(true);
+$('btnEnd').onclick = endRide;
+$('btnAgain').onclick = resetToTitle;
+$('btnTcx').onclick = downloadTCX;
+$('btnStrava').onclick = ()=>{
+  if (G.samples.length && !downloadTCX._done){ downloadTCX(); downloadTCX._done = true; }
+  window.open('https://www.strava.com/upload/select', '_blank');
+};
+$('ergToggle').onclick = ()=>{
+  G.erg = !G.erg;
+  if (G.erg) sendErg(G.ergWatts); else ergOff();
+  refreshErgLabel();
+};
+$('ergUp').onclick = ()=>{ G.ergWatts = Math.min(800, G.ergWatts+10); if (G.erg) sendErg(G.ergWatts); refreshErgLabel(); };
+$('ergDown').onclick = ()=>{ G.ergWatts = Math.max(50, G.ergWatts-10); if (G.erg) sendErg(G.ergWatts); refreshErgLabel(); };
+
+const glowSlider = $('glowSlider');
+glowSlider.value = Math.round(G.glow * 100);
+glowSlider.oninput = ()=>{
+  G.glow = glowSlider.value / 100;
+  localStorage.setItem('vv_glow', String(G.glow));
+};
+
+const unitBtn = $('unitBtn');
+unitBtn.textContent = G.imperial ? 'MI' : 'KM';
+unitBtn.onclick = ()=>{
+  G.imperial = !G.imperial;
+  unitBtn.textContent = G.imperial ? 'MI' : 'KM';
+  localStorage.setItem('vv_units', G.imperial ? 'mi' : 'km');
+};
+
+window.addEventListener('keydown', e=>{
+  if (G.mode === 'ride' && G.demo){
+    if (e.key === 'ArrowUp')   G.demoEffort = Math.min(600, G.demoEffort + 10);
+    if (e.key === 'ArrowDown') G.demoEffort = Math.max(0,   G.demoEffort - 10);
+  }
+  if (e.key === 'Escape' && G.mode === 'ride') endRide();
+  if (e.code === 'Space' && G.mode === 'title') startRide(true);
+});
+</script>
+</body>
+</html>

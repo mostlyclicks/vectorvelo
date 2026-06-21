@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VECTOR VELO — Arcade Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g:#39ff6e; --c:#27e8ff; --w:#eaffe9; --a:#ffc234; --r:#ff3b4e; --bg:#020403;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+html,body{ width:100%; height:100%; overflow:hidden; background:var(--bg); }
+body{ font-family:"Courier New",monospace; color:var(--g); }
+canvas{ position:fixed; inset:0; width:100vw; height:100vh; display:block; }
+
+/* CRT */
+#crt{ position:fixed; inset:0; pointer-events:none; z-index:50; }
+#crt::before{ content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.2) 3px,rgba(0,0,0,0) 4px);
+  mix-blend-mode:multiply; }
+#crt::after{ content:""; position:absolute; inset:0;
+  background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.5) 100%);
+  animation:flicker 4.2s infinite steps(60); }
+@keyframes flicker{ 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:.86} 94%{opacity:1} 97%{opacity:.93} 98%{opacity:1} }
+
+/* panels */
+.panel{ position:fixed; left:50%; transform:translateX(-50%); z-index:60; display:none; text-align:center; }
+.panel.show{ display:block; }
+#menuPanel{ bottom:8vh; }
+#ridePanel{ top:10px; right:12px; left:auto; transform:none; text-align:right; display:none; }
+#ridePanel.show{ display:flex; align-items:center; gap:10px; }
+#endPanel{ bottom:8vh; }
+#msgBar{ position:fixed; left:50%; transform:translateX(-50%); bottom:2.5vh; z-index:60;
+  font-size:13px; letter-spacing:.18em; color:var(--a); text-shadow:0 0 8px var(--a);
+  display:none; max-width:90vw; text-align:center; pointer-events:none; }
+#msgBar.show{ display:block; }
+
+/* hr dot */
+#hrDot{ width:9px; height:9px; border-radius:50%; background:rgba(255,59,78,.2);
+  box-shadow:none; transition:all .4s; display:inline-block; vertical-align:middle; margin-right:4px; }
+#hrDot.on{ background:var(--r); box-shadow:0 0 10px var(--r); animation:pulse 1.1s infinite; }
+@keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.55} }
+
+/* buttons */
+button.v{ appearance:none; background:transparent; cursor:pointer; font-family:inherit;
+  font-weight:bold; font-size:14px; letter-spacing:.22em; text-transform:uppercase;
+  border:1.5px solid currentColor; padding:10px 24px; margin:5px;
+  text-shadow:0 0 7px currentColor; box-shadow:0 0 9px currentColor44,inset 0 0 9px rgba(255,255,255,.06);
+  transition:all .1s linear; }
+button.v:hover{ filter:brightness(1.3); box-shadow:0 0 22px currentColor; }
+button.v.g{ color:var(--g); }
+button.v.c{ color:var(--c); }
+button.v.a{ color:var(--a); }
+button.v.r{ color:var(--r); }
+button.v.sm{ font-size:11px; padding:6px 12px; margin:3px; }
+button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
+
+/* settings tray */
+#tray{ position:fixed; right:14px; bottom:14px; z-index:60; opacity:.65; transition:opacity .15s;
+  font-size:10px; letter-spacing:.28em; display:flex; align-items:center; gap:12px; }
+#tray:hover{ opacity:1; }
+#tray input[type=range]{ width:100px; accent-color:var(--g); }
+#unitBtn{ appearance:none; background:transparent; border:1px solid var(--c); color:var(--c);
+  font-family:inherit; font-size:10px; letter-spacing:.25em; padding:3px 9px; cursor:pointer; }
+#unitBtn:hover{ background:var(--c); color:#021014; }
+.hint{ font-size:10px; letter-spacing:.28em; opacity:.55; margin-top:8px; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="crt"></div>
+
+<!-- TITLE -->
+<div id="menuPanel" class="panel show">
+  <button class="v c" id="btnBike">⚡ CONNECT KICKR</button>
+  <button class="v r" id="btnHR">♥ CONNECT HR MONITOR</button>
+  <button class="v g" id="btnDemo">▶ DEMO RIDE</button>
+  <div class="hint">WEB BLUETOOTH · CHROME / EDGE · HTTPS OR LOCALHOST</div>
+</div>
+
+<!-- IN-RIDE -->
+<div id="ridePanel" class="panel">
+  <span id="hrDot"></span>
+  <button class="v r sm" id="btnHRride" style="display:none">+HR</button>
+  <button class="v r sm" id="btnEnd">■ END RIDE</button>
+</div>
+
+<!-- RIDE COMPLETE -->
+<div id="endPanel" class="panel">
+  <button class="v a" id="btnTcx">⬇ SAVE .TCX</button>
+  <button class="v c" id="btnStrava">⬆ UPLOAD TO STRAVA</button>
+  <button class="v g" id="btnAgain">↻ NEW RIDE</button>
+  <div class="hint">SAVE TCX FIRST · STRAVA OPENS UPLOAD PAGE</div>
+</div>
+
+<div id="msgBar"></div>
+<div id="tray">
+  <button id="unitBtn">MI</button>
+  GLOW <input type="range" id="glowSlider" min="0" max="200" value="100">
+</div>
+
+<script>
+"use strict";
+const cv = document.getElementById('cv');
+const cx = cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth; H=window.innerHeight;
+  cv.width=W*DPR; cv.height=H*DPR;
+  cx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize',resize); resize();
+
+// ── state ──────────────────────────────────────────────────────────────────
+const S = {
+  mode:'title', t:0, last:performance.now(),
+  // live telemetry
+  power:0, cadence:0, speedKmh:0, hr:0,
+  sp:0, sc:0, ss:0, sh:0,           // smooth versions
+  // ride totals
+  startTime:null, elapsed:0, distM:0, kJ:0,
+  maxPower:0, avgPower:0, _pSum:0, _pN:0,
+  maxHr:0, maxSpeedKmh:0,
+  samples:[], _lastSample:0,
+  // devices
+  ble:{ mode:null, control:null, lastCrank:null },
+  hrConnected:false,
+  deviceDistBase:null, deviceDistLast:null,
+  // demo
+  demo:false, demoEffort:185,
+  // fx
+  shake:0, wave:1, waveFlash:0,
+  crank:0, roadScroll:0,
+  // settings
+  glow: +(localStorage.getItem('vv_glow')??1),
+  imperial: (localStorage.getItem('vv_units')?? 'mi')==='mi',
+  // zones (bpm ceilings)
+  z1:115, z2:152, z3:162, z4:174,
+  ftp:200,
+  best: +(localStorage.getItem('vv_best_m')||0),
+};
+
+// ── helpers ────────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const show=(id,on)=>$(id).classList.toggle('show',!!on);
+function fmtT(s){ s=Math.floor(s); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60; return (h?h+':':'') + String(m).padStart(h?2:1,'0') + ':' + String(x).padStart(2,'0'); }
+let _mt=0;
+function msg(txt,ms=4200){
+  const el=$('msgBar'); el.textContent=txt; el.classList.add('show');
+  clearTimeout(_mt); if(ms) _mt=setTimeout(()=>el.classList.remove('show'),ms);
+}
+
+// effort ramp cyan → green → amber → red
+function ramp(t){
+  t=Math.max(0,Math.min(1,t));
+  const stops=[[0,[39,232,255]],[.33,[57,255,110]],[.66,[255,194,52]],[1,[255,59,78]]];
+  for(let i=1;i<stops.length;i++){
+    if(t<=stops[i][0]){
+      const a=stops[i-1],b=stops[i],f=(t-a[0])/(b[0]-a[0]);
+      return `rgb(${Math.round(a[1][0]+(b[1][0]-a[1][0])*f)},${Math.round(a[1][1]+(b[1][1]-a[1][1])*f)},${Math.round(a[1][2]+(b[1][2]-a[1][2])*f)})`;
+    }
+  }
+  return '#ff3b4e';
+}
+// HR zone by personal thresholds
+function hrZone(bpm){
+  if(bpm<=S.z1) return {n:1,l:'RECOVERY'};
+  if(bpm<=S.z2) return {n:2,l:'ENDURANCE'};
+  if(bpm<=S.z3) return {n:3,l:'TEMPO'};
+  if(bpm<=S.z4) return {n:4,l:'THRESHOLD'};
+  return {n:5,l:'VO2 MAX'};
+}
+
+// ── Bluetooth ──────────────────────────────────────────────────────────────
+const FTMS=0x1826,IBD=0x2AD2,FTMS_CP=0x2AD9,CPS=0x1818,CPM=0x2A63,HRS=0x180D,HRM=0x2A37;
+
+async function connectBike(){
+  if(!navigator.bluetooth){ msg('NO WEB BLUETOOTH — USE CHROME/EDGE ON HTTPS',8000); return; }
+  try{
+    msg('SCANNING FOR KICKR…',0);
+    const dev=await navigator.bluetooth.requestDevice({
+      filters:[{services:[FTMS]},{services:[CPS]},{namePrefix:'KICKR'},{namePrefix:'Wahoo'}],
+      optionalServices:[FTMS,CPS,HRS]
+    });
+    dev.addEventListener('gattserverdisconnected',()=>msg('TRAINER DISCONNECTED',5000));
+    const srv=await dev.gatt.connect();
+    try{
+      const svc=await srv.getPrimaryService(FTMS);
+      const ibd=await svc.getCharacteristic(IBD);
+      await ibd.startNotifications();
+      ibd.addEventListener('characteristicvaluechanged',e=>parseIBD(e.target.value));
+      S.ble.mode='ftms';
+      try{
+        const ctl=await svc.getCharacteristic(FTMS_CP);
+        await ctl.startNotifications(); await ctl.writeValue(Uint8Array.of(0x00));
+        S.ble.control=ctl;
+      }catch(_){}
+    }catch(_){
+      const svc=await srv.getPrimaryService(CPS);
+      const cpm=await svc.getCharacteristic(CPM);
+      await cpm.startNotifications();
+      cpm.addEventListener('characteristicvaluechanged',e=>parseCPS(e.target.value));
+      S.ble.mode='cps';
+    }
+    // try onboard HR (KICKR Bike has it)
+    try{
+      const hs=await srv.getPrimaryService(HRS);
+      const hc=await hs.getCharacteristic(HRM);
+      await hc.startNotifications();
+      hc.addEventListener('characteristicvaluechanged',e=>parseHR(e.target.value));
+      setHRled(true);
+    }catch(_){}
+    msg('LINKED: '+(dev.name||'TRAINER')+' ['+S.ble.mode.toUpperCase()+']',5000);
+    startRide(false);
+  }catch(e){
+    if(e&&e.name==='NotFoundError') msg('SCAN CANCELLED',3000);
+    else msg('BT ERROR: '+(e.message||e),7000);
+  }
+}
+
+async function connectHR(){
+  if(!navigator.bluetooth){ msg('NO WEB BLUETOOTH',6000); return; }
+  try{
+    msg('SCANNING FOR HR MONITOR…',0);
+    const dev=await navigator.bluetooth.requestDevice({
+      filters:[{services:[HRS]},{namePrefix:'Wahoo'},{namePrefix:'TICKR'},{namePrefix:'HRM'},{namePrefix:'Polar'},{namePrefix:'Garmin'}],
+      optionalServices:[HRS]
+    });
+    dev.addEventListener('gattserverdisconnected',()=>{ setHRled(false); msg('HR MONITOR DISCONNECTED',5000); });
+    const srv=await dev.gatt.connect();
+    const svc=await srv.getPrimaryService(HRS);
+    const ch=await svc.getCharacteristic(HRM);
+    await ch.startNotifications();
+    ch.addEventListener('characteristicvaluechanged',e=>parseHR(e.target.value));
+    setHRled(true);
+    msg('HR LINKED: '+(dev.name||'MONITOR'),4000);
+  }catch(e){
+    if(e&&e.name==='NotFoundError') msg('HR SCAN CANCELLED',3000);
+    else msg('HR ERROR: '+(e.message||e),5000);
+  }
+}
+
+function setHRled(on){
+  S.hrConnected=on;
+  $('hrDot').classList.toggle('on',on);
+  $('btnHRride').style.display=on?'none':'inline-block';
+  // update title button
+  if($('btnHR')) $('btnHR').classList.toggle('linked',on);
+  if($('btnHR')) $('btnHR').textContent=on?'♥ HR MONITOR LINKED':'♥ CONNECT HR MONITOR';
+}
+
+function parseHR(dv){ S.hr=(dv.getUint8(0)&1)?dv.getUint16(1,true):dv.getUint8(1); }
+
+function parseIBD(dv){
+  let o=0; const f=dv.getUint16(o,true); o+=2;
+  if(!(f&0x0001)){ S.speedKmh=dv.getUint16(o,true)/100; o+=2; }
+  if(f&0x0002) o+=2;
+  if(f&0x0004){ S.cadence=dv.getUint16(o,true)/2; o+=2; }
+  if(f&0x0008) o+=2;
+  if(f&0x0010){ const d=dv.getUint16(o,true)+(dv.getUint8(o+2)<<16); o+=3; if(S.deviceDistBase===null)S.deviceDistBase=d; S.deviceDistLast=d; }
+  if(f&0x0020) o+=2;
+  if(f&0x0040){ S.power=Math.max(0,dv.getInt16(o,true)); o+=2; }
+  if(f&0x0200){ S.hr=dv.getUint8(o); setHRled(true); }
+}
+
+function parseCPS(dv){
+  const f=dv.getUint16(0,true); S.power=Math.max(0,dv.getInt16(2,true)); let o=4;
+  if(f&0x0001)o+=1; if(f&0x0004)o+=2; if(f&0x0010)o+=6;
+  if(f&0x0020){
+    const revs=dv.getUint16(o,true),t=dv.getUint16(o+2,true),prev=S.ble.lastCrank;
+    if(prev){ const dr=(revs-prev.revs+65536)%65536,dt=(t-prev.t+65536)%65536; if(dt>0&&dr>0)S.cadence=dr/(dt/1024)*60; }
+    S.ble.lastCrank={revs,t};
+  }
+  S.speedKmh=p2v(S.power);
+}
+
+function p2v(p){ return p<=0?0:3.6*Math.cbrt(p/0.19); }
+
+// ── ride lifecycle ─────────────────────────────────────────────────────────
+function startRide(demo){
+  Object.assign(S,{ mode:'ride', demo, startTime:new Date(), elapsed:0, distM:0, kJ:0,
+    maxPower:0, avgPower:0, _pSum:0, _pN:0, maxHr:0, maxSpeedKmh:0,
+    samples:[], _lastSample:0, deviceDistBase:null, deviceDistLast:null,
+    power:0, cadence:0, speedKmh:0, hr:0, sp:0, sc:0, ss:0, sh:0,
+    wave:1, waveFlash:0, shake:0 });
+  show('menuPanel',false); show('endPanel',false); show('ridePanel',true);
+  if(demo) msg('DEMO MODE · ↑↓ ARROWS CHANGE EFFORT',5000);
+}
+
+function endRide(){
+  S.mode='done';
+  show('ridePanel',false); show('endPanel',true);
+  if(S.distM>S.best){ S.best=S.distM; localStorage.setItem('vv_best_m',String(Math.round(S.distM))); msg('★ NEW DISTANCE RECORD ★',6000); }
+}
+
+function resetTitle(){
+  S.mode='title';
+  show('endPanel',false); show('menuPanel',true);
+}
+
+function recordSample(){
+  S.samples.push({ t:new Date().toISOString(), distM:S.distM, power:Math.round(S.power), cad:Math.round(S.cadence), speedMs:S.speedKmh/3.6, hr:S.hr||null });
+}
+
+// ── TCX export ─────────────────────────────────────────────────────────────
+function buildTCX(){
+  const start=S.samples[0]?.t??S.startTime.toISOString();
+  const pts=S.samples.map(s=>`
+      <Trackpoint>
+        <Time>${s.t}</Time>
+        <DistanceMeters>${s.distM.toFixed(1)}</DistanceMeters>
+        <Cadence>${s.cad}</Cadence>${s.hr?`
+        <HeartRateBpm><Value>${s.hr}</Value></HeartRateBpm>`:''}
+        <Extensions><ns3:TPX>
+          <ns3:Speed>${s.speedMs.toFixed(2)}</ns3:Speed>
+          <ns3:Watts>${s.power}</ns3:Watts>
+        </ns3:TPX></Extensions>
+      </Trackpoint>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+  xmlns:ns3="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+  <Activities><Activity Sport="Biking">
+    <Id>${start}</Id>
+    <Lap StartTime="${start}">
+      <TotalTimeSeconds>${S.elapsed.toFixed(0)}</TotalTimeSeconds>
+      <DistanceMeters>${S.distM.toFixed(1)}</DistanceMeters>
+      <Calories>${Math.round(S.kJ*.239)}</Calories>
+      <Intensity>Active</Intensity><TriggerMethod>Manual</TriggerMethod>
+      <Track>${pts}</Track>
+      <Extensions><ns3:LX>
+        <ns3:AvgWatts>${Math.round(S.avgPower)}</ns3:AvgWatts>
+        <ns3:MaxWatts>${Math.round(S.maxPower)}</ns3:MaxWatts>
+      </ns3:LX></Extensions>
+    </Lap>
+    <Notes>VectorVelo arcade trainer ride</Notes>
+  </Activity></Activities>
+</TrainingCenterDatabase>`;
+}
+
+function downloadTCX(){
+  if(!S.samples.length){ msg('NO RIDE DATA',3000); return; }
+  const blob=new Blob([buildTCX()],{type:'application/vnd.garmin.tcx+xml'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='vectorvelo-'+S.startTime.toISOString().slice(0,16).replace(/[:T]/g,'-')+'.tcx';
+  a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  msg('TCX SAVED — UPLOAD AT STRAVA.COM/UPLOAD',6000);
+}
+
+// ── update ─────────────────────────────────────────────────────────────────
+function update(dt){
+  S.t+=dt;
+  if(S.mode!=='ride') return;
+
+  if(S.demo){
+    const w=Math.sin(S.t*.7)*22+Math.sin(S.t*2.3)*9+(Math.random()-.5)*14;
+    S.power=Math.max(0,S.demoEffort+w);
+    S.cadence=S.power<5?0:82+Math.sin(S.t*.5)*6+(Math.random()-.5)*3;
+    S.speedKmh=p2v(S.power);
+    S.hr=Math.round(95+Math.min(85,S.power*.32)+Math.sin(S.t*.2)*4);
+  }
+
+  const k=1-Math.pow(0.001,dt);
+  S.sp+=(S.power-S.sp)*k;
+  S.sc+=(S.cadence-S.sc)*k;
+  S.ss+=(S.speedKmh-S.ss)*k;
+  S.sh+=(S.hr-S.sh)*Math.min(k,.04);   // HR smooths slower
+
+  S.elapsed+=dt;
+  S.kJ+=S.power*dt/1000;
+  if(S.power>S.maxPower) S.maxPower=S.power;
+  if(S.hr>S.maxHr) S.maxHr=S.hr;
+  if(S.speedKmh>S.maxSpeedKmh) S.maxSpeedKmh=S.speedKmh;
+  if(S.power>0){ S._pSum+=S.power*dt; S._pN+=dt; S.avgPower=S._pSum/Math.max(1e-6,S._pN); }
+  if(S.deviceDistBase!==null&&S.deviceDistLast!==null) S.distM=S.deviceDistLast-S.deviceDistBase;
+  else S.distM+=(S.speedKmh/3.6)*dt;
+
+  const w=Math.floor(S.distM/5000)+1;
+  if(w!==S.wave){ S.wave=w; S.waveFlash=3; S.shake=.6; }
+  if(S.waveFlash>0) S.waveFlash-=dt;
+  if(S.shake>0) S.shake-=dt*2;
+
+  if(S.elapsed-S._lastSample>=1){ S._lastSample=S.elapsed; recordSample(); }
+}
+
+// ── drawing helpers ────────────────────────────────────────────────────────
+function gl(color,blur=12,width=1.6){
+  cx.strokeStyle=color; cx.lineWidth=width;
+  cx.shadowColor=color; cx.shadowBlur=blur*S.glow;
+  cx.lineJoin='round'; cx.lineCap='round';
+}
+function ng(){ cx.shadowBlur=0; }
+
+function bigStat(txt,x,y,size,color,maxW,right=false){
+  cx.save();
+  cx.font=`${size}px Anton,"Arial Black",Impact,sans-serif`;
+  let w=cx.measureText(txt).width;
+  if(w>maxW){ size*=maxW/w; cx.font=`${size}px Anton,"Arial Black",Impact,sans-serif`; w=cx.measureText(txt).width; }
+  if(right) x-=w;
+  cx.textAlign='left'; cx.textBaseline='alphabetic';
+  cx.lineWidth=Math.max(1.4,size/28);
+  cx.strokeStyle=color; cx.shadowColor=color; cx.shadowBlur=3*S.glow;
+  cx.strokeText(txt,x,y); cx.restore();
+}
+
+function vecText(str,x,y,size,color,align='left',blur=8){
+  cx.save();
+  cx.font=`bold ${size}px "Courier New",monospace`;
+  cx.textAlign='left'; cx.textBaseline='alphabetic';
+  cx.lineWidth=Math.max(.8,size/22);
+  cx.strokeStyle=color; cx.shadowColor=color; cx.shadowBlur=blur*S.glow;
+  const ls=size*.18;
+  if(align!=='left'){ let tot=0; for(const c of str) tot+=cx.measureText(c).width+ls; tot-=ls; x-=align==='center'?tot/2:tot; }
+  for(const ch of str){ cx.strokeText(ch,x,y); x+=cx.measureText(ch).width+ls; }
+  cx.restore();
+}
+
+function bar(x,y,w,h,frac,color,segs=24){
+  gl(color,6,1); cx.strokeRect(x,y,w,h); ng();
+  for(let i=0;i<segs;i++){
+    const sx=x+3+i*(w-6)/segs;
+    cx.fillStyle=i<Math.round(frac*segs)?color:'rgba(255,255,255,0.06)';
+    cx.fillRect(sx,y+3,(w-6)/segs-2,h-6);
+  }
+}
+
+// ── scene objects ──────────────────────────────────────────────────────────
+const stars=Array.from({length:90},()=>({x:Math.random(),y:Math.random()*.55,s:Math.random()}));
+function drawStars(hy){
+  ng();
+  for(const st of stars){
+    const tw=.4+.6*Math.abs(Math.sin(S.t*1.5+st.s*20));
+    cx.fillStyle=`rgba(234,255,233,${.25+st.s*.5*tw})`;
+    cx.fillRect(st.x*W,st.y*hy,st.s>.8?2:1,st.s>.8?2:1);
+  }
+}
+
+function makeRock(){
+  const n=8+(Math.random()*4|0);
+  return { verts:Array.from({length:n},(_,i)=>{ const a=i/n*Math.PI*2,r=.6+Math.random()*.45; return [Math.cos(a)*r,Math.sin(a)*r]; }),
+    x:Math.random()*1.2-.1, y:Math.random()*.35+.03, r:14+Math.random()*26,
+    rot:Math.random()*Math.PI*2, vr:(Math.random()-.5)*.8, vx:(Math.random()*.5+.1)*(Math.random()<.5?-1:1) };
+}
+const rocks=Array.from({length:7},makeRock);
+function drawRocks(hy,dt){
+  gl('rgba(57,255,110,0.35)',5,1.1);
+  for(const r of rocks){
+    r.rot+=r.vr*dt; r.x+=r.vx*dt*.04*(1+S.ss/40);
+    if(r.x<-.15)r.x=1.15; if(r.x>1.15)r.x=-.15;
+    cx.save(); cx.translate(r.x*W,r.y*hy+hy*.2); cx.rotate(r.rot);
+    cx.beginPath(); r.verts.forEach(([vx,vy],i)=>i?cx.lineTo(vx*r.r,vy*r.r):cx.moveTo(vx*r.r,vy*r.r));
+    cx.closePath(); cx.stroke(); cx.restore();
+  }
+}
+
+function drawMountains(hy){
+  gl('rgba(39,232,255,0.5)',7,1.2);
+  cx.beginPath();
+  for(let i=0;i<=26;i++){
+    const x=i/26*W, ph=i*1.7+Math.floor(S.distM/40)*.013, y=hy-Math.abs(Math.sin(ph)*Math.cos(ph*.37))*H*.05-2;
+    i?cx.lineTo(x,y):cx.moveTo(x,y);
+  }
+  cx.stroke();
+}
+
+function drawRoad(hy,dt){
+  const vp={x:W/2+Math.sin(S.distM/900)*W*.06,y:hy}, bh=W*.62, LANES=8;
+  gl('#27e8ff',13,1.7);
+  for(let i=0;i<=LANES;i++){ const u=i/LANES*2-1; cx.beginPath(); cx.moveTo(vp.x+u*W*.012,vp.y); cx.lineTo(W/2+u*bh,H+8); cx.stroke(); }
+  S.roadScroll=(S.roadScroll+(S.ss/3.6)*dt*.06)%1;
+  gl('#39ff6e',11,1.5);
+  for(let i=0;i<11;i++){
+    const z=((i/11)+S.roadScroll)%1, p=Math.pow(z,3.1);
+    const y=vp.y+(H+8-vp.y)*p, half=W*.012+(bh-W*.012)*p, xC=vp.x+(W/2-vp.x)*p;
+    cx.globalAlpha=.25+.75*p; cx.beginPath(); cx.moveTo(xC-half,y); cx.lineTo(xC+half,y); cx.stroke();
+  }
+  cx.globalAlpha=1;
+}
+
+// ── rear-view rider ────────────────────────────────────────────────────────
+function drawBike(dt){
+  S.crank+=(S.sc/60)*Math.PI*2*dt;
+  const u=Math.min(W,H)*.082;
+  const rock=Math.sin(S.crank)*(.018+Math.min(.045,S.sp/9000));
+  const bob=Math.sin(S.crank*2)*u*.02;
+  cx.save(); cx.translate(W/2,H*.88+bob); cx.rotate(rock);
+
+  gl('#39ff6e',9,1.6);
+  const wr=u*.62;
+  // rear wheel edge-on + spinning valve dot
+  cx.beginPath(); cx.ellipse(0,0,wr*.15,wr,0,0,Math.PI*2); cx.stroke();
+  const va=S.crank*2.1; cx.beginPath(); cx.arc(Math.cos(va)*wr*.12,Math.sin(va)*wr*.88,1.6,0,Math.PI*2); cx.stroke();
+
+  // frame: seat tube, stays, saddle
+  const sad={x:0,y:-u*1.46};
+  cx.beginPath();
+  cx.moveTo(0,-wr*.08); cx.lineTo(sad.x,sad.y);
+  cx.moveTo(-wr*.15,-wr*.05); cx.lineTo(-u*.05,sad.y+u*.2);
+  cx.moveTo( wr*.15,-wr*.05); cx.lineTo( u*.05,sad.y+u*.2);
+  cx.moveTo(-u*.14,sad.y); cx.lineTo(u*.14,sad.y);
+  cx.stroke();
+
+  // bars
+  const barY=-u*1.76, bh2=u*.45;
+  cx.beginPath();
+  cx.moveTo(-bh2,barY); cx.lineTo(bh2,barY);
+  cx.moveTo(-bh2,barY); cx.lineTo(-bh2,barY+u*.16);
+  cx.moveTo( bh2,barY); cx.lineTo( bh2,barY+u*.16);
+  cx.moveTo(0,barY);    cx.lineTo(0,barY+u*.3);
+  cx.stroke();
+
+  // rider
+  gl('#39ff6e',10,1.7);
+  const hipY=sad.y-u*.06;
+  const hipL={x:-u*.17,y:hipY}, hipR={x:u*.17,y:hipY};
+  const shL={x:-u*.40,y:-u*2.30}, shR={x:u*.40,y:-u*2.30};
+
+  // torso
+  cx.beginPath();
+  cx.moveTo(hipL.x-u*.05,hipL.y); cx.lineTo(shL.x,shL.y);
+  cx.lineTo(shR.x,shR.y); cx.lineTo(hipR.x+u*.05,hipR.y);
+  cx.closePath(); cx.stroke();
+
+  // head + helmet
+  cx.beginPath(); cx.arc(0,-u*2.60,u*.21,0,Math.PI*2); cx.stroke();
+  cx.beginPath(); cx.arc(0,-u*2.64,u*.26,Math.PI*1.12,Math.PI*1.88); cx.stroke();
+
+  // arms
+  function arm(sh,hx){
+    const hand={x:hx,y:barY+u*.02}, elb={x:sh.x*1.28,y:(sh.y+hand.y)/2+u*.04};
+    cx.beginPath(); cx.moveTo(sh.x,sh.y); cx.lineTo(elb.x,elb.y); cx.lineTo(hand.x,hand.y); cx.stroke();
+  }
+  arm(shL,-bh2*.9); arm(shR,bh2*.9);
+
+  // legs (opposite phase, knees kick out on upstroke)
+  function leg(hip,side,phase){
+    const foot={x:side*u*.27,y:-wr*.5+Math.cos(S.crank+phase)*u*.34};
+    const lift=.5-Math.cos(S.crank+phase)/2;
+    const knee={x:side*(u*.30+lift*u*.14), y:(hip.y+foot.y)/2-u*.16-lift*u*.12};
+    cx.beginPath(); cx.moveTo(hip.x,hip.y); cx.lineTo(knee.x,knee.y); cx.lineTo(foot.x,foot.y); cx.stroke();
+    cx.beginPath(); cx.moveTo(foot.x-u*.09,foot.y); cx.lineTo(foot.x+u*.09,foot.y); cx.stroke();
+  }
+  leg(hipL,-1,Math.PI); leg(hipR,1,0);
+
+  // thrust flame > 240W
+  if(S.sp>240){
+    gl('#ffc234',11,1.3);
+    const f=u*.2+(S.sp-240)/700*u+Math.random()*u*.08;
+    cx.beginPath(); cx.moveTo(-wr*.15,wr*.6); cx.lineTo(0,wr*.6+f); cx.lineTo(wr*.15,wr*.6); cx.stroke();
+  }
+  cx.restore();
+}
+
+// ── HUD ───────────────────────────────────────────────────────────────────
+function drawHUD(){
+  const m=Math.round(W*.02), col=W/3-m, bottom=H-64;
+  const imp=S.imperial;
+  const mph=imp?S.ss*.621371:S.ss;
+  const dist=imp?S.distM/1609.344:S.distM/1000;
+  const ftpFrac=Math.min(1,S.sp/Math.max(1,S.ftp*1.2));
+
+  // ── LEFT stack: W / speed / dist / RPM ──
+  const rows=[
+    [Math.round(S.power)+' W',           ramp(S.sp/Math.max(1,S.ftp*1.2))],
+    [Math.round(mph)+(imp?' MPH':' KMH'), ramp(S.ss/45)],
+    [dist.toFixed(1)+(imp?' MI':' KM'),   '#27e8ff'],
+    [Math.round(S.cadence)+' RPM',        '#27e8ff'],
+  ];
+  const n=rows.length;
+  const rowH=Math.min((bottom-m)/(n+.5),H*.175);
+  const barSpace=rowH*.45, barH=Math.max(8,rowH*.16);
+  let y=bottom-(n-1)*rowH-barSpace;
+  for(let i=0;i<n;i++){
+    bigStat(rows[i][0],m,y,rowH*1.04,rows[i][1],col);
+    if(i===0){ bar(m,y+rowH*.16,col,barH,ftpFrac,rows[0][1],24); y+=barSpace; }
+    y+=rowH;
+  }
+
+  // ── RIGHT top: BIG HR ──
+  const hrTopY=bottom-(n-1)*rowH-barSpace;  // aligns with left stack top
+  if(S.hr>0){
+    const hrColor=ramp(S.sh/Math.max(1,S.z4*1.1));
+    bigStat(Math.round(S.sh)+' BPM',W-m,hrTopY,rowH*1.04,hrColor,col,true);
+    const zone=hrZone(S.hr);
+    vecText('ZONE '+zone.n+' · '+zone.l, W-m, hrTopY+rowH*.26, 11, hrColor, 'right', 3);
+    bar(W-m-col, hrTopY+rowH*.16+rowH*.28, col, barH, Math.min(1,S.sh/(S.z4*1.1)), hrColor, 24);
+  } else {
+    // dim placeholder so layout doesn't shift
+    bigStat('-- BPM',W-m,hrTopY,rowH*1.04,'rgba(255,59,78,0.18)',col,true);
+    if(!S.hrConnected) vecText('TAP ♥ TO CONNECT',W-m,hrTopY+rowH*.26,11,'rgba(255,59,78,0.35)','right',2);
+  }
+
+  // ── RIGHT bottom: TIME / AVG W / SCORE ──
+  const rRow=rowH*.5;
+  const rRows=[['TIME '+fmtT(S.elapsed),'#eaffe9'],['AVG '+Math.round(S.avgPower)+' W','#39ff6e'],['SCORE '+String(Math.round(S.kJ)).padStart(6,'0'),'#ffc234']];
+  let ry=bottom-rRow*(rRows.length-1);
+  for(const [txt,c] of rRows){ bigStat(txt,W-m,ry,rRow,c,col,true); ry+=rRow; }
+
+  // ── WAVE banner ──
+  vecText('WAVE '+S.wave,W/2,40,16,'#27e8ff','center',5);
+  if(S.waveFlash>0&&Math.sin(S.t*16)>0) vecText('WAVE '+S.wave+' — SPEED BONUS',W/2,H*.3,24,'#ffc234','center',13);
+  if(S.demo) vecText('DEMO',W/2,H-14,11,'rgba(57,255,110,0.28)','center',3);
+}
+
+// ── screens ────────────────────────────────────────────────────────────────
+function drawTitle(){
+  const hy=H*.46;
+  drawStars(hy); drawRocks(hy,1/60); drawMountains(hy); drawRoad(hy,1/60);
+  S.ss=24;
+  vecText('VECTOR',W/2,H*.22,Math.min(80,W/9),'#39ff6e','center',20);
+  vecText('VELO',  W/2,H*.22+Math.min(92,W/8),Math.min(80,W/9),'#27e8ff','center',20);
+  if(Math.sin(S.t*3.2)>-.25) vecText('INSERT WATTS TO PLAY',W/2,H*.6,16,'#ffc234','center');
+  if(S.best>0) vecText('HIGH SCORE '+(S.imperial?(S.best/1609.344).toFixed(2)+' MI':(S.best/1000).toFixed(2)+' KM'),W/2,H*.66,13,'rgba(57,255,110,.3)','center');
+  vecText('© 2026 MOSTLY CLICKS AMUSEMENTS · VECTORVELO.APP',W/2,H-42,10,'rgba(57,255,110,.2)','center',3);
+}
+
+function drawDone(){
+  const hy=H*.46; drawStars(hy); drawMountains(hy);
+  vecText('RIDE COMPLETE',W/2,H*.18,Math.min(44,W/12),'#ffc234','center',18);
+  const imp=S.imperial;
+  const dist=imp?(S.distM/1609.344).toFixed(2)+' MI':(S.distM/1000).toFixed(2)+' KM';
+  const rows=[['TIME',fmtT(S.elapsed)],['DIST',dist],['AVG PWR',Math.round(S.avgPower)+' W'],['MAX PWR',Math.round(S.maxPower)+' W'],['ENERGY',Math.round(S.kJ)+' KJ'],['SCORE',String(Math.round(S.kJ)).padStart(6,'0')]];
+  let y=H*.28;
+  for(const [k,v] of rows){ vecText(k,W/2-36,y,17,'rgba(57,255,110,.4)','right',4); vecText(v,W/2+36,y,17,'#39ff6e','left',5); y+=34; }
+  if(Math.sin(S.t*3)>0) vecText('SAVE OR SHARE BELOW ▼',W/2,y+18,12,'#27e8ff','center');
+}
+
+function drawRide(dt){
+  const hy=H*.42;
+  if(S.shake>0) cx.translate((Math.random()-.5)*6*S.shake,(Math.random()-.5)*6*S.shake);
+  drawStars(hy); drawRocks(hy,dt); drawMountains(hy); drawRoad(hy,dt);
+  drawBike(dt); drawHUD();
+}
+
+// ── main loop ──────────────────────────────────────────────────────────────
+function frame(now){
+  const dt=Math.min(.05,(now-S.last)/1000); S.last=now;
+  update(dt);
+  cx.save();
+  cx.fillStyle='rgba(2,4,3,0.55)'; cx.fillRect(0,0,W,H);
+  if(S.mode==='title') drawTitle();
+  else if(S.mode==='ride') drawRide(dt);
+  else drawDone();
+  cx.restore(); ng();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ── UI wiring ──────────────────────────────────────────────────────────────
+$('btnBike').onclick   = connectBike;
+$('btnHR').onclick     = connectHR;
+$('btnHRride').onclick = connectHR;
+$('btnDemo').onclick   = ()=>startRide(true);
+$('btnEnd').onclick    = endRide;
+$('btnAgain').onclick  = resetTitle;
+$('btnTcx').onclick    = downloadTCX;
+$('btnStrava').onclick = ()=>{
+  if(S.samples.length) downloadTCX();
+  window.open('https://www.strava.com/upload/select','_blank');
+};
+
+// glow slider
+const gs=$('glowSlider');
+gs.value=Math.round(S.glow*100);
+gs.oninput=()=>{ S.glow=gs.value/100; localStorage.setItem('vv_glow',String(S.glow)); };
+
+// units toggle
+const ub=$('unitBtn');
+ub.textContent=S.imperial?'MI':'KM';
+ub.onclick=()=>{ S.imperial=!S.imperial; ub.textContent=S.imperial?'MI':'KM'; localStorage.setItem('vv_units',S.imperial?'mi':'km'); };
+
+// keyboard
+window.addEventListener('keydown',e=>{
+  if(S.mode==='ride'&&S.demo){
+    if(e.key==='ArrowUp')   S.demoEffort=Math.min(600,S.demoEffort+10);
+    if(e.key==='ArrowDown') S.demoEffort=Math.max(0,S.demoEffort-10);
+  }
+  if(e.key==='Escape'&&S.mode==='ride') endRide();
+  if(e.code==='Space'&&S.mode==='title') startRide(true);
+});
+</script>
+</body>
+</html>
