@@ -373,7 +373,7 @@ button.v.linked{ color:var(--g) !important; border-color:var(--g) !important; }
 <script>
 "use strict";
 
-const VERSION = 'v0.3.0';
+const VERSION = 'v0.4.0';
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const SUPA_URL='https://bsfyvwmmfpeialgqmngg.supabase.co';
@@ -594,30 +594,33 @@ function wkg(){ return S.weightKg>0?(S.sp/S.weightKg).toFixed(1)+' W/KG':null; }
 let selectedProfile = PROFILES[0];
 let pendingBike = false;  // whether selector was opened from KICKR or demo
 
+// Global selector so onclick in innerHTML can reach it
+window.rsSelect=function(i){ selectProfile(PROFILES[i]); };
+
 function buildRideSelector(){
   $('rsVersion').textContent = VERSION;
   const grid=$('rsGrid');
-  grid.innerHTML='';
-  PROFILES.forEach((p,i)=>{
-    const card=document.createElement('div');
-    card.className='rs-card';
-    card.style.color=p.color;
-    card.style.borderColor=p.color+'55';
-    card.innerHTML=`<span class="rs-card-icon">${p.icon}</span><span class="rs-card-name">${p.name}</span><span class="rs-card-sub">${p.sub.split('·')[0].trim()}</span>`;
-    card.addEventListener('click',()=>selectProfile(p));
-    card.dataset.idx=i;
-    grid.appendChild(card);
-  });
+  // Build cards with inline onclick — avoids all closure/addEventListener issues
+  grid.innerHTML = PROFILES.map((p,i)=>`
+    <div class="rs-card" id="rsCard${i}"
+      style="color:${p.color};border-color:${p.color}55;cursor:pointer"
+      onclick="window.rsSelect(${i})">
+      <span class="rs-card-icon" style="pointer-events:none">${p.icon}</span>
+      <span class="rs-card-name" style="pointer-events:none">${p.name}</span>
+      <span class="rs-card-sub" style="pointer-events:none">${p.sub.split('·')[0].trim()}</span>
+    </div>`).join('');
   // highlight first card without drawing canvas (modal hidden at boot)
   highlightCard(PROFILES[0]);
 }
 
 function highlightCard(p){
-  document.querySelectorAll('.rs-card').forEach((c,i)=>{
-    const active=PROFILES[i]===p;
+  PROFILES.forEach((prof,i)=>{
+    const c=$('rsCard'+i);
+    if(!c) return;
+    const active=prof===p;
     c.classList.toggle('selected',active);
-    c.style.background=active?p.color+'18':'transparent';
-    c.style.borderColor=active?p.color:p.color+'55';
+    c.style.background=active?prof.color+'18':'transparent';
+    c.style.borderColor=active?prof.color:prof.color+'55';
   });
 }
 
@@ -690,11 +693,19 @@ function openRideSelect(fromBike){
   pendingBike=!!fromBike;
   $('rsLaunchBike').style.display=fromBike?'block':'none';
   $('rsLaunchDemo').style.display='block';
+  // hide panels so their buttons don't intercept clicks through the modal
+  $('menuPanel').style.pointerEvents='none';
+  $('tray').style.pointerEvents='none';
+  $('userIndicator').style.pointerEvents='none';
   $('rideSelectModal').classList.add('show');
-  // defer draw until after browser paint + layout
-  setTimeout(()=>selectProfile(selectedProfile), 20);
+  setTimeout(()=>selectProfile(selectedProfile), 30);
 }
-function closeRideSelect(){ $('rideSelectModal').classList.remove('show'); }
+function closeRideSelect(){
+  $('rideSelectModal').classList.remove('show');
+  $('menuPanel').style.pointerEvents='';
+  $('tray').style.pointerEvents='';
+  $('userIndicator').style.pointerEvents='';
+}
 
 async function launchRide(demo){
   // capture ERG target from input if Ground Control
